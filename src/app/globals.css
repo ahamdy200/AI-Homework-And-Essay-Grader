@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --bg-canvas: #faf8f4;
+  --bg-surface: #ffffff;
+  --bg-muted: #f3efe6;
+  --border-stone: #e6dfd2;
+  --ink-primary: #1c1917;
+  --ink-secondary: #57534e;
+  --accent-emerald: #1f5e4b;
+  --accent-crimson: #b91c1c;
+}
+
+body {
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif-paper {
+  font-family: var(--font-serif), Georgia, Cambria, "Times New Roman", serif;
+}
+
+.font-mono-score {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Custom subtle scrollbars for three-pane workbench */
+.workbench-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.workbench-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.workbench-scroll::-webkit-scrollbar-thumb {
+  background: #d6cfc2;
+  border-radius: 9999px;
+}
+
+.workbench-scroll::-webkit-scrollbar-thumb:hover {
+  background: #b5ab99;
+}
+
+/* Print feedback report handling */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+    size: auto;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+}
