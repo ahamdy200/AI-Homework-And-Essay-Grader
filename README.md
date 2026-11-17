@@ -7,7 +7,8 @@ A teacher-first grading workbench for English essays, reading responses, and han
 ## Features
 
 - **Multimodal Student Submissions**: Paste typed essays/homework or upload **photos of handwritten work** (PNG, JPG, WEBP, HEIC) and **PDF packets**. Gemini transcribes handwritten work verbatim and evaluates it directly.
-- **Structured Rubric Grading**: Built-in presets for Middle School Essays, High School Argumentative/Analytical Essays, Grammar Homework Checks, and Narrative Writing—plus a **Custom Assignment & Rubric Builder**.
+- **Mixed MCQ & Essay Grading**: Upload an answer key with numbered multiple-choice answers alongside open-ended essay prompts. Gemini auto-scores MCQs deterministically against the key and grades essays with the rubric, all in one pass.
+- **Structured Rubric Grading**: Built-in presets for Middle School Essays, High School Argumentative/Analytical Essays, Grammar Homework Checks, Mixed MCQ + Essay Quizzes, and Narrative Writing—plus a **Custom Assignment & Rubric Builder**.
 - **Interactive Red-Pen Annotations**: Highlights grammar, spelling, punctuation, clarity, vocabulary, structure, and praise inline on the paper. Teachers can **confirm**, **dismiss**, or **add notes** to every markup.
 - **Full Teacher Override Control**: Edit individual rubric criterion scores, override the overall percentage, customize the final teacher comment, and track status (`AI Graded` → `Reviewed` → `Finalized`).
 - **Stateful Teacher Co-Pilot**: Ask follow-up questions using Gemini's `previous_interaction_id` (e.g., draft parent summaries, generate targeted grammar practice exercises, or adapt feedback for struggling readers).

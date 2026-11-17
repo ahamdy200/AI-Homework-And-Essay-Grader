@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/lib/__tests__/*.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test --test-force-exit .test-dist/lib/__tests__/*.test.js"
   },
   "dependencies": {
     "@google/genai": "^3.1.0",

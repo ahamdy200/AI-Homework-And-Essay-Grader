@@ -16,6 +16,11 @@ const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 
 let writeQueue: Promise<void> = Promise.resolve();
 
+/** Wait for all queued writes to finish. Exported for tests only. */
+export async function _drainWriteQueue(): Promise<void> {
+  await writeQueue;
+}
+
 function createSeedAssignments(): Assignment[] {
   const middlePreset =
     RUBRIC_PRESETS.find((r) => r.id === "middle-school-essay") ??
@@ -151,10 +156,38 @@ export async function writeWorkbenchData(data: WorkbenchData): Promise<void> {
 export async function updateWorkbenchData(
   updater: (current: WorkbenchData) => WorkbenchData
 ): Promise<WorkbenchData> {
-  const current = await readWorkbenchData();
-  const next = updater(current);
-  await writeWorkbenchData(next);
-  return next;
+  let result!: WorkbenchData;
+  const runUpdate = async () => {
+    // Inline the read to avoid deadlocking on the shared writeQueue
+    await ensureDirectories();
+    let current: WorkbenchData;
+    try {
+      const raw = await fs.readFile(WORKBENCH_FILE, "utf-8");
+      const parsed = JSON.parse(raw) as WorkbenchData;
+      current = {
+        assignments: Array.isArray(parsed.assignments)
+          ? parsed.assignments.map(normalizeAssignment)
+          : createSeedAssignments(),
+        submissions: Array.isArray(parsed.submissions)
+          ? parsed.submissions.map(normalizeSubmission)
+          : [],
+      };
+    } catch (err) {
+      const error = err as NodeJS.ErrnoException;
+      if (error.code === "ENOENT") {
+        current = { assignments: createSeedAssignments(), submissions: [] };
+      } else {
+        throw err;
+      }
+    }
+    result = updater(current);
+    const tmpPath = `${WORKBENCH_FILE}.${crypto.randomUUID()}.tmp`;
+    await fs.writeFile(tmpPath, JSON.stringify(result, null, 2), "utf-8");
+    await fs.rename(tmpPath, WORKBENCH_FILE);
+  };
+  writeQueue = writeQueue.then(runUpdate, runUpdate);
+  await writeQueue;
+  return result;
 }
 
 function sanitizeExtension(originalName: string, mimeType: string): string {
