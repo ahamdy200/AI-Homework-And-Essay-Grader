@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "node:fs";
 import path from "node:path";
-import { resolveSafeUploadPath } from "@/lib/storage";
+import { readUploadFileBuffer, resolveSafeUploadKey } from "@/lib/storage";
 
 const MIME_BY_EXT: Record<string, string> = {
   ".pdf": "application/pdf",
@@ -19,27 +18,27 @@ export async function GET(
 ) {
   try {
     const { path: segments } = await context.params;
-    const resolved = resolveSafeUploadPath(segments);
-    if (!resolved) {
+    const safeKey = resolveSafeUploadKey(segments);
+    if (!safeKey) {
       return NextResponse.json({ error: "Invalid media path." }, { status: 400 });
     }
 
-    const fileBuffer = await fs.readFile(resolved);
-    const ext = path.extname(resolved).toLowerCase();
+    const fileBuffer = await readUploadFileBuffer(segments);
+    if (!fileBuffer) {
+      return NextResponse.json({ error: "Media file not found." }, { status: 404 });
+    }
+
+    const ext = path.extname(safeKey.fileName).toLowerCase();
     const contentType = MIME_BY_EXT[ext] || "application/octet-stream";
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "private, max-age=3600",
       },
     });
-  } catch (err) {
-    const error = err as NodeJS.ErrnoException;
-    if (error.code === "ENOENT") {
-      return NextResponse.json({ error: "Media file not found." }, { status: 404 });
-    }
+  } catch {
     return NextResponse.json({ error: "Failed to read media file." }, { status: 500 });
   }
 }

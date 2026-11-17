@@ -1,6 +1,8 @@
 import { promises as fs } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
+import { getStore, type Store } from "@netlify/blobs";
 import { RUBRIC_PRESETS } from "./presets";
 import type {
   Assignment,
@@ -10,9 +12,61 @@ import type {
 } from "./types";
 import type { ParsedMediaFile } from "./uploads";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const WORKBENCH_FILE = path.join(DATA_DIR, "workbench.json");
-const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
+const WORKBENCH_BLOB_STORE = "redpen-workbench";
+const WORKBENCH_BLOB_KEY = "workbench";
+const UPLOADS_BLOB_STORE = "redpen-uploads";
+
+export function resolveDataRootDir(env: {
+  netlify?: boolean;
+  lambda?: boolean;
+  cwd?: string;
+  tmpDir?: string;
+} = {}): string {
+  const cwd = env.cwd ?? process.cwd();
+  const isServerless = Boolean(
+    env.netlify ??
+      (process.env.NETLIFY ||
+        env.lambda ||
+        process.env.AWS_LAMBDA_FUNCTION_NAME ||
+        process.env.LAMBDA_TASK_ROOT ||
+        cwd.startsWith("/var/task"))
+  );
+  if (isServerless) {
+    return path.join(env.tmpDir ?? os.tmpdir(), "redpen-data");
+  }
+  return path.join(cwd, "data");
+}
+
+function getStoragePaths() {
+  const dataDir = resolveDataRootDir();
+  return {
+    dataDir,
+    workbenchFile: path.join(dataDir, "workbench.json"),
+    uploadsDir: path.join(dataDir, "uploads"),
+  };
+}
+
+function getBlobStoreSafe(baseName: string): Store | null {
+  const hasNetlifyRuntime = Boolean(
+    process.env.NETLIFY ||
+      process.env.NETLIFY_BLOBS_CONTEXT ||
+      (globalThis as { netlifyBlobsContext?: unknown }).netlifyBlobsContext
+  );
+  if (!hasNetlifyRuntime) return null;
+
+  const ctx = process.env.CONTEXT;
+  const storeName =
+    !ctx || ctx === "production" ? baseName : `${baseName}-preview`;
+
+  try {
+    return getStore({ name: storeName, consistency: "strong" });
+  } catch (err) {
+    if (err instanceof Error && err.name === "MissingBlobsEnvironmentError") {
+      return null;
+    }
+    throw err;
+  }
+}
 
 let writeQueue: Promise<void> = Promise.resolve();
 
@@ -110,45 +164,87 @@ function normalizeSubmission(raw: WorkbenchData["submissions"][number]) {
   };
 }
 
-async function ensureDirectories(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
+function normalizeWorkbenchData(parsed: WorkbenchData): WorkbenchData {
+  return {
+    assignments: Array.isArray(parsed.assignments)
+      ? parsed.assignments.map(normalizeAssignment)
+      : createSeedAssignments(),
+    submissions: Array.isArray(parsed.submissions)
+      ? parsed.submissions.map(normalizeSubmission)
+      : [],
+  };
 }
 
-export async function readWorkbenchData(): Promise<WorkbenchData> {
-  await ensureDirectories();
-  try {
-    const raw = await fs.readFile(WORKBENCH_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as WorkbenchData;
+async function ensureDirectories(): Promise<void> {
+  const { dataDir, uploadsDir } = getStoragePaths();
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.mkdir(uploadsDir, { recursive: true });
+}
+
+async function readWorkbenchDataDirect(): Promise<{
+  data: WorkbenchData;
+  needsSeedPersist: boolean;
+}> {
+  const blobStore = getBlobStoreSafe(WORKBENCH_BLOB_STORE);
+  if (blobStore) {
+    const existing = (await blobStore.get(WORKBENCH_BLOB_KEY, {
+      type: "json",
+      consistency: "strong",
+    })) as WorkbenchData | null;
+    if (existing) {
+      return { data: normalizeWorkbenchData(existing), needsSeedPersist: false };
+    }
     return {
-      assignments: Array.isArray(parsed.assignments)
-        ? parsed.assignments.map(normalizeAssignment)
-        : createSeedAssignments(),
-      submissions: Array.isArray(parsed.submissions)
-        ? parsed.submissions.map(normalizeSubmission)
-        : [],
+      data: { assignments: createSeedAssignments(), submissions: [] },
+      needsSeedPersist: true,
     };
+  }
+
+  await ensureDirectories();
+  const { workbenchFile } = getStoragePaths();
+  try {
+    const raw = await fs.readFile(
+      /*turbopackIgnore: true*/ workbenchFile,
+      "utf-8"
+    );
+    const parsed = JSON.parse(raw) as WorkbenchData;
+    return { data: normalizeWorkbenchData(parsed), needsSeedPersist: false };
   } catch (err) {
     const error = err as NodeJS.ErrnoException;
     if (error.code === "ENOENT") {
-      const seed: WorkbenchData = {
-        assignments: createSeedAssignments(),
-        submissions: [],
+      return {
+        data: { assignments: createSeedAssignments(), submissions: [] },
+        needsSeedPersist: true,
       };
-      await writeWorkbenchData(seed);
-      return seed;
     }
     throw err;
   }
 }
 
-export async function writeWorkbenchData(data: WorkbenchData): Promise<void> {
+async function writeWorkbenchDataDirect(data: WorkbenchData): Promise<void> {
+  const blobStore = getBlobStoreSafe(WORKBENCH_BLOB_STORE);
+  if (blobStore) {
+    await blobStore.setJSON(WORKBENCH_BLOB_KEY, data);
+    return;
+  }
+
   await ensureDirectories();
-  const runWrite = async () => {
-    const tmpPath = `${WORKBENCH_FILE}.${crypto.randomUUID()}.tmp`;
-    await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-    await fs.rename(tmpPath, WORKBENCH_FILE);
-  };
+  const { workbenchFile } = getStoragePaths();
+  const tmpPath = `${workbenchFile}.${crypto.randomUUID()}.tmp`;
+  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+  await fs.rename(tmpPath, workbenchFile);
+}
+
+export async function readWorkbenchData(): Promise<WorkbenchData> {
+  const { data, needsSeedPersist } = await readWorkbenchDataDirect();
+  if (needsSeedPersist) {
+    return updateWorkbenchData((current) => current);
+  }
+  return data;
+}
+
+export async function writeWorkbenchData(data: WorkbenchData): Promise<void> {
+  const runWrite = () => writeWorkbenchDataDirect(data);
   writeQueue = writeQueue.then(runWrite, runWrite);
   return writeQueue;
 }
@@ -158,32 +254,9 @@ export async function updateWorkbenchData(
 ): Promise<WorkbenchData> {
   let result!: WorkbenchData;
   const runUpdate = async () => {
-    // Inline the read to avoid deadlocking on the shared writeQueue
-    await ensureDirectories();
-    let current: WorkbenchData;
-    try {
-      const raw = await fs.readFile(WORKBENCH_FILE, "utf-8");
-      const parsed = JSON.parse(raw) as WorkbenchData;
-      current = {
-        assignments: Array.isArray(parsed.assignments)
-          ? parsed.assignments.map(normalizeAssignment)
-          : createSeedAssignments(),
-        submissions: Array.isArray(parsed.submissions)
-          ? parsed.submissions.map(normalizeSubmission)
-          : [],
-      };
-    } catch (err) {
-      const error = err as NodeJS.ErrnoException;
-      if (error.code === "ENOENT") {
-        current = { assignments: createSeedAssignments(), submissions: [] };
-      } else {
-        throw err;
-      }
-    }
+    const { data: current } = await readWorkbenchDataDirect();
     result = updater(current);
-    const tmpPath = `${WORKBENCH_FILE}.${crypto.randomUUID()}.tmp`;
-    await fs.writeFile(tmpPath, JSON.stringify(result, null, 2), "utf-8");
-    await fs.rename(tmpPath, WORKBENCH_FILE);
+    await writeWorkbenchDataDirect(result);
   };
   writeQueue = writeQueue.then(runUpdate, runUpdate);
   await writeQueue;
@@ -205,10 +278,15 @@ export async function saveAttachmentsInFolder(
   idPrefix = "att"
 ): Promise<UploadedAttachment[]> {
   if (files.length === 0) return [];
-  await ensureDirectories();
   const safeSubDir = folderId.replace(/[^a-zA-Z0-9_-]/g, "");
-  const targetDir = path.join(UPLOADS_DIR, safeSubDir);
-  await fs.mkdir(targetDir, { recursive: true });
+  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
+
+  let targetDir = "";
+  if (!blobStore) {
+    await ensureDirectories();
+    targetDir = path.join(getStoragePaths().uploadsDir, safeSubDir);
+    await fs.mkdir(targetDir, { recursive: true });
+  }
 
   const attachments: UploadedAttachment[] = [];
   for (let i = 0; i < files.length; i++) {
@@ -216,8 +294,22 @@ export async function saveAttachmentsInFolder(
     const id = `${idPrefix}-${Date.now()}-${i}`;
     const ext = sanitizeExtension(file.originalName, file.mimeType);
     const filename = `${id}${ext}`;
-    const diskPath = path.join(targetDir, filename);
-    await fs.writeFile(diskPath, file.buffer);
+    if (blobStore) {
+      const blobKey = `${safeSubDir}/${filename}`;
+      const ab = file.buffer.buffer.slice(
+        file.buffer.byteOffset,
+        file.buffer.byteOffset + file.buffer.byteLength
+      ) as ArrayBuffer;
+      await blobStore.set(blobKey, ab, {
+        metadata: {
+          originalName: file.originalName,
+          mimeType: file.mimeType,
+        },
+      });
+    } else {
+      const diskPath = path.join(targetDir, filename);
+      await fs.writeFile(diskPath, file.buffer);
+    }
     attachments.push({
       id,
       originalName: file.originalName,
@@ -243,6 +335,46 @@ export async function saveAnswerKeyAttachments(
   return saveAttachmentsInFolder(ownerId, files, "key");
 }
 
+export function resolveSafeUploadKey(
+  segments: string[]
+): { subDir: string; fileName: string } | null {
+  if (segments.length !== 2) return null;
+  const [subDir, fileName] = segments;
+  if (
+    !/^[a-zA-Z0-9_-]+$/.test(subDir) ||
+    !/^[a-zA-Z0-9._-]+$/.test(fileName)
+  ) {
+    return null;
+  }
+  return { subDir, fileName };
+}
+
+export async function readUploadFileBuffer(
+  segments: string[]
+): Promise<Buffer | null> {
+  const safeKey = resolveSafeUploadKey(segments);
+  if (!safeKey) return null;
+
+  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
+  if (blobStore) {
+    const ab = (await blobStore.get(
+      `${safeKey.subDir}/${safeKey.fileName}`,
+      { type: "arrayBuffer", consistency: "strong" }
+    )) as ArrayBuffer | null;
+    return ab ? Buffer.from(ab) : null;
+  }
+
+  const resolved = resolveSafeUploadPath(segments);
+  if (!resolved) return null;
+  try {
+    return await fs.readFile(/*turbopackIgnore: true*/ resolved);
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException;
+    if (error.code === "ENOENT") return null;
+    throw err;
+  }
+}
+
 export async function readStoredAttachments(
   attachments: UploadedAttachment[]
 ): Promise<ParsedMediaFile[]> {
@@ -250,10 +382,9 @@ export async function readStoredAttachments(
   for (const att of attachments) {
     const cleanRel = att.urlPath.replace(/^\/api\/media\//, "");
     const segments = cleanRel.split("/").filter(Boolean);
-    const resolved = resolveSafeUploadPath(segments);
-    if (!resolved) continue;
     try {
-      const buffer = await fs.readFile(resolved);
+      const buffer = await readUploadFileBuffer(segments);
+      if (!buffer) continue;
       loaded.push({
         originalName: att.originalName,
         mimeType: att.mimeType,
@@ -271,6 +402,15 @@ export async function deleteSingleAttachmentFile(
 ): Promise<void> {
   const cleanRel = attachment.urlPath.replace(/^\/api\/media\//, "");
   const segments = cleanRel.split("/").filter(Boolean);
+  const safeKey = resolveSafeUploadKey(segments);
+  if (!safeKey) return;
+
+  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
+  if (blobStore) {
+    await blobStore.delete(`${safeKey.subDir}/${safeKey.fileName}`);
+    return;
+  }
+
   const resolved = resolveSafeUploadPath(segments);
   if (!resolved) return;
   await fs.rm(resolved, { force: true });
@@ -279,7 +419,15 @@ export async function deleteSingleAttachmentFile(
 export async function deleteAttachmentFolder(folderId: string): Promise<void> {
   const safeSubDir = folderId.replace(/[^a-zA-Z0-9_-]/g, "");
   if (!safeSubDir) return;
-  const targetDir = path.join(UPLOADS_DIR, safeSubDir);
+
+  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
+  if (blobStore) {
+    const { blobs } = await blobStore.list({ prefix: `${safeSubDir}/` });
+    await Promise.all(blobs.map((b) => blobStore.delete(b.key)));
+    return;
+  }
+
+  const targetDir = path.join(getStoragePaths().uploadsDir, safeSubDir);
   await fs.rm(targetDir, { recursive: true, force: true });
 }
 
@@ -288,16 +436,15 @@ export async function deleteSubmissionFiles(submissionId: string): Promise<void>
 }
 
 export function resolveSafeUploadPath(segments: string[]): string | null {
-  if (segments.length !== 2) return null;
-  const [subDir, fileName] = segments;
-  if (
-    !/^[a-zA-Z0-9_-]+$/.test(subDir) ||
-    !/^[a-zA-Z0-9._-]+$/.test(fileName)
-  ) {
-    return null;
-  }
-  const resolved = path.resolve(UPLOADS_DIR, subDir, fileName);
-  const root = path.resolve(UPLOADS_DIR);
+  const safeKey = resolveSafeUploadKey(segments);
+  if (!safeKey) return null;
+  const { uploadsDir } = getStoragePaths();
+  const resolved = path.resolve(
+    /*turbopackIgnore: true*/ uploadsDir,
+    safeKey.subDir,
+    safeKey.fileName
+  );
+  const root = path.resolve(/*turbopackIgnore: true*/ uploadsDir);
   if (!resolved.startsWith(root + path.sep)) return null;
   return resolved;
 }

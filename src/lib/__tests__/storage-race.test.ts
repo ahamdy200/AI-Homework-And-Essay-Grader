@@ -1,8 +1,11 @@
 import { describe, it, after } from "node:test";
 import assert from "node:assert/strict";
+import path from "node:path";
 import {
   updateWorkbenchData,
   readWorkbenchData,
+  resolveDataRootDir,
+  resolveSafeUploadKey,
   _drainWriteQueue,
 } from "../storage";
 
@@ -67,5 +70,30 @@ describe("updateWorkbenchData race-safety", () => {
         (s) => !s.id.startsWith("race-test-")
       ),
     }));
+  });
+
+  it("falls back to temp directory on read-only serverless runtimes like Netlify /var/task", () => {
+    assert.equal(
+      resolveDataRootDir({ netlify: false, lambda: false, cwd: "/repo", tmpDir: "/tmp" }),
+      path.join("/repo", "data")
+    );
+    assert.equal(
+      resolveDataRootDir({ netlify: true, cwd: "/var/task", tmpDir: "/tmp" }),
+      path.join("/tmp", "redpen-data")
+    );
+    assert.equal(
+      resolveDataRootDir({ cwd: "/var/task/app", tmpDir: "/tmp" }),
+      path.join("/tmp", "redpen-data")
+    );
+  });
+
+  it("validates upload keys safely against path traversal", () => {
+    assert.deepEqual(resolveSafeUploadKey(["sub-1", "att-1.png"]), {
+      subDir: "sub-1",
+      fileName: "att-1.png",
+    });
+    assert.equal(resolveSafeUploadKey(["..", "secret"]), null);
+    assert.equal(resolveSafeUploadKey(["sub-1", "../secret"]), null);
+    assert.equal(resolveSafeUploadKey(["only-one"]), null);
   });
 });
