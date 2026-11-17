@@ -183,6 +183,7 @@ export const GEMINI_FALLBACK_MODELS: readonly string[] = [
   GEMINI_MODEL,
   "gemini-3.6-flash",
   "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
 ];
 
 /**
@@ -222,10 +223,12 @@ export async function createInteractionWithFallback(
   options: {
     models?: readonly string[];
     retryDelayMs?: number;
+    timeoutMs?: number;
   } = {}
 ): Promise<{ interaction: InteractionResult; modelUsed: string }> {
   const models = options.models ?? GEMINI_FALLBACK_MODELS;
-  const retryDelayMs = options.retryDelayMs ?? 700;
+  const retryDelayMs = options.retryDelayMs ?? 300;
+  const timeoutMs = options.timeoutMs ?? 45000;
   let lastError: unknown;
 
   for (let i = 0; i < models.length; i++) {
@@ -233,9 +236,10 @@ export async function createInteractionWithFallback(
     const maxAttempts = i === 0 ? 2 : 1; // retry primary once before failing over
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const interaction = (await ai.interactions.create(
-          buildRequest(model)
-        )) as InteractionResult;
+        const interaction = (await ai.interactions.create(buildRequest(model), {
+          retries: { strategy: "none" },
+          timeout_ms: timeoutMs,
+        })) as InteractionResult;
         return { interaction, modelUsed: model };
       } catch (err) {
         lastError = err;
