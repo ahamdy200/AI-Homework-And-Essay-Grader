@@ -207,10 +207,24 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    await updateWorkbenchData((current) => ({
-      ...current,
-      assignments: current.assignments.filter((a) => a.id !== id),
-    }));
+    let found = false;
+    await updateWorkbenchData((current) => {
+      const exists = current.assignments.some((a) => a.id === id);
+      if (!exists) return current;
+      found = true;
+      return {
+        ...current,
+        assignments: current.assignments.filter((a) => a.id !== id),
+      };
+    });
+
+    if (!found) {
+      return NextResponse.json(
+        { error: "Assignment not found." },
+        { status: 404 }
+      );
+    }
+
     await deleteAttachmentFolder(id);
 
     return NextResponse.json({ ok: true });

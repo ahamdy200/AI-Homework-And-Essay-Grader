@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --bg-canvas: #faf8f4;
+  --bg-canvas: #f7f5fa;
   --bg-surface: #ffffff;
-  --bg-muted: #f3efe6;
-  --border-stone: #e6dfd2;
-  --ink-primary: #1c1917;
-  --ink-secondary: #57534e;
-  --accent-emerald: #1f5e4b;
-  --accent-crimson: #b91c1c;
+  --bg-muted: #efeaf6;
+  --border-stone: #e3daf0;
+  --ink-primary: #2d233d;
+  --ink-secondary: #5d5e60;
+  --accent-emerald: #552985;
+  --accent-crimson: #7f5fa8;
 }
 
 body {
@@ -37,12 +37,12 @@ body {
 }
 
 .workbench-scroll::-webkit-scrollbar-thumb {
-  background: #d6cfc2;
+  background: #c8b9de;
   border-radius: 9999px;
 }
 
 .workbench-scroll::-webkit-scrollbar-thumb:hover {
-  background: #b5ab99;
+  background: #997fbc;
 }
 
 /* Print feedback report handling */

@@ -81,9 +81,9 @@ const CATEGORY_STYLES: Record<
   },
   praise: {
     label: "Strength",
-    highlight: "bg-emerald-100/80 border-b-2 border-emerald-600 text-stone-900",
-    badge: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    border: "border-l-emerald-600",
+    highlight: "bg-[#EFE9F8]/80 border-b-2 border-[#552985] text-[#2D233D]",
+    badge: "bg-[#F7F4FA] text-[#552985] border-[#DFD5EC]",
+    border: "border-l-[#552985]",
   },
 };
 
@@ -240,20 +240,20 @@ export function AnnotatedPaper({
   };
 
   return (
-    <div className="workbench-scroll flex h-full flex-col overflow-y-auto bg-[#FAF8F4]/50">
+    <div className="workbench-scroll flex h-full flex-col overflow-y-auto bg-[#F7F5FA]/70">
       {/* Paper Top Header */}
-      <div className="sticky top-0 z-10 border-b border-[#E6DFD2] bg-[#FAF8F4]/95 px-5 py-3.5 backdrop-blur">
+      <div className="sticky top-0 z-10 border-b border-[#E3DAF0] bg-white/95 px-5 py-3.5 backdrop-blur">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-serif-paper truncate text-xl font-semibold text-stone-900">
+              <h2 className="font-serif-paper truncate text-xl font-semibold text-[#2D233D]">
                 {submission.detectedTitle || assignment?.title || "Student Paper"}
               </h2>
-              <span className="rounded-md border border-[#E6DFD2] bg-white px-2 py-0.5 text-[11px] font-medium text-stone-600">
+              <span className="rounded-md border border-[#E3DAF0] bg-[#F7F4FA] px-2 py-0.5 text-[11px] font-medium text-[#552985]">
                 {submission.wordCount} words
               </span>
             </div>
-            <p className="mt-0.5 text-xs text-stone-500">
+            <p className="mt-0.5 text-xs text-[#5D5E60]">
               {submission.studentName}
               {submission.studentIdCode ? ` (${submission.studentIdCode})` : ""}
               {assignment ? ` • ${assignment.title}` : ""}
@@ -267,8 +267,8 @@ export function AnnotatedPaper({
                 onClick={() => setShowAnswerKey((v) => !v)}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
                   showAnswerKey
-                    ? "border-[#1F5E4B] bg-emerald-50 text-emerald-900"
-                    : "border-[#E6DFD2] bg-white text-stone-700 hover:bg-stone-50"
+                    ? "border-[#552985] bg-[#EFE9F8] text-[#552985]"
+                    : "border-[#E3DAF0] bg-white text-[#2D233D] hover:bg-[#F7F4FA]"
                 }`}
               >
                 <KeyRound className="h-3.5 w-3.5" />
@@ -282,8 +282,8 @@ export function AnnotatedPaper({
                 onClick={() => setShowMediaPanel((v) => !v)}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
                   showMediaPanel
-                    ? "border-[#1F5E4B] bg-emerald-50 text-emerald-900"
-                    : "border-[#E6DFD2] bg-white text-stone-700 hover:bg-stone-50"
+                    ? "border-[#552985] bg-[#EFE9F8] text-[#552985]"
+                    : "border-[#E3DAF0] bg-white text-[#2D233D] hover:bg-[#F7F4FA]"
                 }`}
               >
                 <FileImage className="h-3.5 w-3.5" />
@@ -294,14 +294,14 @@ export function AnnotatedPaper({
               </button>
             )}
 
-            <div className="inline-flex rounded-lg border border-[#E6DFD2] bg-white p-0.5">
+            <div className="inline-flex rounded-lg border border-[#E3DAF0] bg-[#F7F5FA] p-0.5">
               <button
                 type="button"
                 onClick={() => setViewMode("annotated")}
                 className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition ${
                   viewMode === "annotated"
-                    ? "bg-[#1F5E4B] text-white"
-                    : "text-stone-600 hover:text-stone-900"
+                    ? "bg-[#552985] text-white"
+                    : "text-[#5D5E60] hover:text-[#2D233D]"
                 }`}
               >
                 <Highlighter className="h-3.5 w-3.5" />
@@ -312,8 +312,8 @@ export function AnnotatedPaper({
                 onClick={() => setViewMode("compare")}
                 className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition ${
                   viewMode === "compare"
-                    ? "bg-[#1F5E4B] text-white"
-                    : "text-stone-600 hover:text-stone-900"
+                    ? "bg-[#552985] text-white"
+                    : "text-[#5D5E60] hover:text-[#2D233D]"
                 }`}
               >
                 <Columns2 className="h-3.5 w-3.5" />
@@ -324,8 +324,8 @@ export function AnnotatedPaper({
                 onClick={() => setViewMode("plain")}
                 className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition ${
                   viewMode === "plain"
-                    ? "bg-[#1F5E4B] text-white"
-                    : "text-stone-600 hover:text-stone-900"
+                    ? "bg-[#552985] text-white"
+                    : "text-[#5D5E60] hover:text-[#2D233D]"
                 }`}
               >
                 <Eye className="h-3.5 w-3.5" />
@@ -344,8 +344,8 @@ export function AnnotatedPaper({
                 onClick={() => setCategoryFilter("all")}
                 className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition ${
                   categoryFilter === "all"
-                    ? "bg-stone-900 text-white"
-                    : "bg-white text-stone-600 border border-[#E6DFD2] hover:bg-stone-50"
+                    ? "bg-[#552985] text-white"
+                    : "bg-white text-[#5D5E60] border border-[#E3DAF0] hover:bg-[#F7F4FA]"
                 }`}
               >
                 All ({submission.annotations.length})
@@ -363,7 +363,7 @@ export function AnnotatedPaper({
                       onClick={() => setCategoryFilter(cat)}
                       className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition ${
                         categoryFilter === cat
-                          ? "border-stone-900 bg-stone-900 text-white"
+                          ? "border-[#552985] bg-[#552985] text-white"
                           : `${CATEGORY_STYLES[cat].badge} hover:opacity-85`
                       }`}
                     >
@@ -374,7 +374,7 @@ export function AnnotatedPaper({
               )}
             </div>
 
-            <div className="text-[11px] text-stone-500">
+            <div className="text-[11px] text-[#5D5E60]">
               {counts.issues} notes • {counts.praise} praise • {counts.accepted}{" "}
               teacher-confirmed
             </div>
@@ -386,18 +386,18 @@ export function AnnotatedPaper({
       <div className="mx-auto w-full max-w-4xl space-y-6 p-5 sm:p-7">
         {/* Optional Teacher's Model Answer / Answer Key Reference */}
         {showAnswerKey && hasAnswerKey && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-xs">
+          <div className="rounded-2xl border border-[#DFD5EC] bg-[#F7F4FA] p-4 shadow-xs">
             <div className="mb-2 flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider text-emerald-900 uppercase">
-                <KeyRound className="h-3.5 w-3.5 text-[#1F5E4B]" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[#552985] uppercase">
+                <KeyRound className="h-3.5 w-3.5 text-[#7F5FA8]" />
                 Teacher&apos;s Model Answer / Answer Key
               </span>
-              <span className="text-[11px] text-stone-500">
+              <span className="text-[11px] text-[#5D5E60]">
                 Used as grading reference
               </span>
             </div>
             {answerKeyText && (
-              <div className="rounded-xl border border-emerald-200/80 bg-white p-3 text-xs leading-relaxed text-stone-800 whitespace-pre-wrap">
+              <div className="rounded-xl border border-[#E3DAF0] bg-white p-3 text-xs leading-relaxed text-[#2D233D] whitespace-pre-wrap">
                 {answerKeyText}
               </div>
             )}
@@ -406,9 +406,9 @@ export function AnnotatedPaper({
                 {answerKeyAttachments.map((att) => (
                   <div
                     key={att.id}
-                    className="overflow-hidden rounded-xl border border-[#E6DFD2] bg-white"
+                    className="overflow-hidden rounded-xl border border-[#E3DAF0] bg-white"
                   >
-                    <div className="flex items-center justify-between border-b border-[#E6DFD2] px-3 py-1.5 text-xs text-stone-600">
+                    <div className="flex items-center justify-between border-b border-[#E3DAF0] px-3 py-1.5 text-xs text-[#5D5E60]">
                       <span className="truncate font-medium">
                         {att.originalName}
                       </span>
@@ -416,7 +416,7 @@ export function AnnotatedPaper({
                         href={att.urlPath}
                         target="_blank"
                         rel="noreferrer"
-                        className="shrink-0 font-medium text-[#1F5E4B] hover:underline"
+                        className="shrink-0 font-medium text-[#552985] hover:underline"
                       >
                         Open
                       </a>
@@ -444,12 +444,12 @@ export function AnnotatedPaper({
 
         {/* Optional Side-by-Side Original Handwritten Photo / PDF Viewer */}
         {showMediaPanel && submission.attachments.length > 0 && (
-          <div className="rounded-2xl border border-[#E6DFD2] bg-white p-4 shadow-xs">
+          <div className="rounded-2xl border border-[#E3DAF0] bg-white p-4 shadow-xs">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-semibold tracking-wider text-stone-500 uppercase">
+              <span className="text-xs font-semibold tracking-wider text-[#7F5FA8] uppercase">
                 Uploaded Student Homework ({submission.attachments.length})
               </span>
-              <span className="text-[11px] text-stone-500">
+              <span className="text-[11px] text-[#5D5E60]">
                 Transcribed verbatim below by Gemini 3.8 Flash
               </span>
             </div>
@@ -457,9 +457,9 @@ export function AnnotatedPaper({
               {submission.attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="overflow-hidden rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]"
+                  className="overflow-hidden rounded-xl border border-[#E3DAF0] bg-[#F7F5FA]"
                 >
-                  <div className="flex items-center justify-between border-b border-[#E6DFD2] px-3 py-1.5 text-xs text-stone-600">
+                  <div className="flex items-center justify-between border-b border-[#E3DAF0] px-3 py-1.5 text-xs text-[#5D5E60]">
                     <span className="truncate font-medium">
                       {att.originalName}
                     </span>
@@ -467,7 +467,7 @@ export function AnnotatedPaper({
                       href={att.urlPath}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 font-medium text-[#1F5E4B] hover:underline"
+                      className="shrink-0 font-medium text-[#552985] hover:underline"
                     >
                       Open
                     </a>
@@ -494,22 +494,22 @@ export function AnnotatedPaper({
 
         {/* Quiz & Question Auto-Correction Card */}
         {questionResults.length > 0 && (
-          <div className="rounded-2xl border border-[#E6DFD2] bg-white p-4 shadow-2xs sm:p-5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
+          <div className="rounded-2xl border border-[#E3DAF0] bg-white p-4 shadow-2xs sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#EFE9F8] pb-3">
               <div className="flex items-center gap-2">
-                <ListChecks className="h-4 w-4 text-[#1F5E4B]" />
+                <ListChecks className="h-4 w-4 text-[#552985]" />
                 <div>
-                  <h3 className="text-sm font-semibold text-stone-900">
+                  <h3 className="text-sm font-semibold text-[#2D233D]">
                     Quiz &amp; Question Auto-Correction
                   </h3>
-                  <p className="text-[11px] text-stone-500">
+                  <p className="text-[11px] text-[#5D5E60]">
                     Objective MCQs are case-insensitive; open/essay questions link directly to rubric &amp; inline paper edits below.
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
                 {questionSummary.mcqTotal > 0 && (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-emerald-900">
+                  <span className="rounded-full border border-[#DFD5EC] bg-[#F7F4FA] px-2.5 py-0.5 text-[#552985]">
                     MCQs: {questionSummary.mcqCorrect}/{questionSummary.mcqTotal} correct ({questionSummary.mcqEarned}/{questionSummary.mcqMax} pts)
                   </span>
                 )}
@@ -528,7 +528,7 @@ export function AnnotatedPaper({
                 const isCorrect = q.status === "correct";
                 const isPartial = q.status === "partial";
                 const cardBorder = isCorrect
-                  ? "border-emerald-200 bg-emerald-50/35"
+                  ? "border-[#DFD5EC] bg-[#F7F4FA]/80"
                   : isPartial
                     ? "border-amber-200 bg-amber-50/35"
                     : "border-red-200 bg-red-50/35";
@@ -540,21 +540,21 @@ export function AnnotatedPaper({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex h-6 items-center rounded-md bg-stone-900 px-2 font-mono text-[11px] font-bold text-white">
+                        <span className="inline-flex h-6 items-center rounded-md bg-[#552985] px-2 font-mono text-[11px] font-bold text-white">
                           Q{q.questionNumber}
                         </span>
-                        <span className="rounded-md border border-stone-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-600">
+                        <span className="rounded-md border border-[#E3DAF0] bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5D5E60]">
                           {q.questionType === "mcq"
                             ? "MCQ"
                             : q.questionType === "short_answer"
                               ? "Short Answer"
                               : "Essay"}
                         </span>
-                        <span className="font-semibold text-stone-800">
+                        <span className="font-semibold text-[#2D233D]">
                           {q.promptOrTopic}
                         </span>
                         {isCorrect ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#552985]">
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Correct
                           </span>
@@ -573,7 +573,7 @@ export function AnnotatedPaper({
                       <div className="flex flex-wrap items-center gap-1.5">
                         {q.questionType === "mcq" && onUpdateQuestionResults ? (
                           <>
-                            <span className="mr-1 font-mono text-[11px] font-semibold text-stone-700">
+                            <span className="mr-1 font-mono text-[11px] font-semibold text-[#2D233D]">
                               {effectivePts}/{q.maxPoints} pts
                             </span>
                             <button
@@ -581,8 +581,8 @@ export function AnnotatedPaper({
                               onClick={() => handleToggleMcq(q.id, true)}
                               className={`rounded-md border px-2 py-0.5 text-[11px] font-medium transition ${
                                 isCorrect
-                                  ? "border-emerald-700 bg-emerald-700 text-white"
-                                  : "border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50"
+                                  ? "border-[#552985] bg-[#552985] text-white"
+                                  : "border-[#DFD5EC] bg-white text-[#552985] hover:bg-[#EFE9F8]"
                               }`}
                             >
                               Mark Correct
@@ -601,7 +601,7 @@ export function AnnotatedPaper({
                           </>
                         ) : q.questionType !== "mcq" &&
                           onUpdateQuestionResults ? (
-                          <label className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-700">
+                          <label className="inline-flex items-center gap-1 text-[11px] font-medium text-[#2D233D]">
                             <span>Score:</span>
                             <input
                               type="number"
@@ -615,14 +615,14 @@ export function AnnotatedPaper({
                                   Number(e.target.value)
                                 )
                               }
-                              className="w-16 rounded-md border border-[#E6DFD2] bg-white px-1.5 py-0.5 text-right font-mono text-xs font-semibold text-stone-900 outline-none focus:border-[#1F5E4B]"
+                              className="w-16 rounded-md border border-[#E3DAF0] bg-white px-1.5 py-0.5 text-right font-mono text-xs font-semibold text-[#2D233D] outline-none focus:border-[#552985]"
                             />
-                            <span className="text-stone-500">
+                            <span className="text-[#5D5E60]">
                               / {q.maxPoints}
                             </span>
                           </label>
                         ) : (
-                          <span className="font-mono text-[11px] font-semibold text-stone-700">
+                          <span className="font-mono text-[11px] font-semibold text-[#2D233D]">
                             {effectivePts}/{q.maxPoints} pts
                           </span>
                         )}
@@ -632,7 +632,7 @@ export function AnnotatedPaper({
                             type="button"
                             onClick={() => handleResetQuestion(q.id)}
                             title="Reset to AI/Key grade"
-                            className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-stone-600 hover:bg-stone-50"
+                            className="inline-flex items-center gap-1 rounded-md border border-[#E3DAF0] bg-white px-1.5 py-0.5 text-[10px] font-medium text-[#5D5E60] hover:bg-[#F7F4FA]"
                           >
                             <RotateCcw className="h-2.5 w-2.5" />
                             Reset
@@ -642,26 +642,26 @@ export function AnnotatedPaper({
                     </div>
 
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      <div className="rounded-lg border border-white/80 bg-white/80 px-2.5 py-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                      <div className="rounded-lg border border-white/80 bg-white/85 px-2.5 py-1.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#5D5E60]">
                           Student Answer:{" "}
                         </span>
-                        <span className="font-mono font-semibold text-stone-900">
+                        <span className="font-mono font-semibold text-[#2D233D]">
                           {q.studentAnswer || "Unanswered"}
                         </span>
                       </div>
-                      <div className="rounded-lg border border-white/80 bg-white/80 px-2.5 py-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                      <div className="rounded-lg border border-white/80 bg-white/85 px-2.5 py-1.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#5D5E60]">
                           Expected / Key:{" "}
                         </span>
-                        <span className="font-mono font-semibold text-emerald-900">
+                        <span className="font-mono font-semibold text-[#552985]">
                           {q.expectedAnswer || "Rubric evaluated"}
                         </span>
                       </div>
                     </div>
 
                     {q.explanation && (
-                      <p className="mt-2 leading-relaxed text-stone-700">
+                      <p className="mt-2 leading-relaxed text-[#2D233D]">
                         {q.explanation}
                       </p>
                     )}
@@ -675,29 +675,29 @@ export function AnnotatedPaper({
         {/* Essay Paper Sheet */}
         {viewMode === "compare" ? (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <div className="rounded-2xl border border-[#E6DFD2] bg-white p-6 shadow-xs">
-              <div className="mb-3 flex items-center gap-2 border-b border-[#E6DFD2] pb-2.5 text-xs font-semibold tracking-wider text-stone-500 uppercase">
-                <FileText className="h-3.5 w-3.5" />
+            <div className="rounded-2xl border border-[#E3DAF0] bg-white p-6 shadow-xs">
+              <div className="mb-3 flex items-center gap-2 border-b border-[#E3DAF0] pb-2.5 text-xs font-semibold tracking-wider text-[#5D5E60] uppercase">
+                <FileText className="h-3.5 w-3.5 text-[#7F5FA8]" />
                 <span>Original Student Draft</span>
               </div>
-              <div className="font-serif-paper whitespace-pre-wrap text-[16px] leading-[1.85] text-stone-800">
+              <div className="font-serif-paper whitespace-pre-wrap text-[16px] leading-[1.85] text-[#2D233D]">
                 {submission.transcribedText}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-xs">
-              <div className="mb-3 flex items-center gap-2 border-b border-emerald-100 pb-2.5 text-xs font-semibold tracking-wider text-emerald-800 uppercase">
+            <div className="rounded-2xl border border-[#C8B9DE] bg-white p-6 shadow-xs">
+              <div className="mb-3 flex items-center gap-2 border-b border-[#EFE9F8] pb-2.5 text-xs font-semibold tracking-wider text-[#552985] uppercase">
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Suggested Clean Revision</span>
               </div>
-              <div className="font-serif-paper whitespace-pre-wrap text-[16px] leading-[1.85] text-stone-900">
+              <div className="font-serif-paper whitespace-pre-wrap text-[16px] leading-[1.85] text-[#2D233D]">
                 {submission.revisedDraft}
               </div>
             </div>
           </div>
         ) : (
-          <article className="rounded-2xl border border-[#E6DFD2] bg-white px-6 py-7 shadow-sm sm:px-10 sm:py-9">
-            <div className="font-serif-paper whitespace-pre-wrap text-[17px] leading-[1.9] text-stone-900">
+          <article className="rounded-2xl border border-[#E3DAF0] bg-white px-6 py-7 shadow-sm sm:px-10 sm:py-9">
+            <div className="font-serif-paper whitespace-pre-wrap text-[17px] leading-[1.9] text-[#2D233D]">
               {viewMode === "plain"
                 ? submission.transcribedText
                 : alignment.segments.map((seg, idx) => {
@@ -717,7 +717,7 @@ export function AnnotatedPaper({
                           style.highlight
                         } ${
                           isSelected
-                            ? "ring-2 ring-stone-900 ring-offset-1"
+                            ? "ring-2 ring-[#552985] ring-offset-1"
                             : "hover:brightness-95"
                         }`}
                         title={`${style.label}: ${seg.annotation.explanation}`}
@@ -734,17 +734,17 @@ export function AnnotatedPaper({
         {viewMode === "annotated" && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold tracking-wider text-stone-500 uppercase">
+              <h3 className="text-xs font-semibold tracking-wider text-[#7F5FA8] uppercase">
                 Line-by-Line Markups &amp; Teacher Review (
                 {visibleAnnotations.length})
               </h3>
-              <span className="text-[11px] text-stone-500">
+              <span className="text-[11px] text-[#5D5E60]">
                 Click any highlight above to jump to its card
               </span>
             </div>
 
             {visibleAnnotations.length === 0 ? (
-              <div className="rounded-xl border border-[#E6DFD2] bg-white p-5 text-center text-xs text-stone-500">
+              <div className="rounded-xl border border-[#E3DAF0] bg-white p-5 text-center text-xs text-[#5D5E60]">
                 No annotations match this filter.
               </div>
             ) : (
@@ -766,8 +766,8 @@ export function AnnotatedPaper({
                         style.border
                       } ${
                         isSelected
-                          ? "border-stone-400 shadow-sm ring-1 ring-stone-300"
-                          : "border-[#E6DFD2]"
+                          ? "border-[#AE97C5] shadow-sm ring-1 ring-[#C8B9DE]"
+                          : "border-[#E3DAF0]"
                       } ${isDismissed ? "opacity-55" : ""}`}
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -778,7 +778,7 @@ export function AnnotatedPaper({
                             {style.label}
                           </span>
                           {ann.status === "accepted" && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-[#EFE9F8] px-2 py-0.5 text-[11px] font-medium text-[#552985]">
                               <Check className="h-3 w-3" />
                               Teacher Confirmed
                             </span>
@@ -789,7 +789,7 @@ export function AnnotatedPaper({
                             </span>
                           )}
                           {isUnanchored && !isDismissed && (
-                            <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] text-stone-500">
+                            <span className="rounded-md bg-[#F7F4FA] px-2 py-0.5 text-[10px] text-[#5D5E60]">
                               General Note
                             </span>
                           )}
@@ -803,7 +803,7 @@ export function AnnotatedPaper({
                                 e.stopPropagation();
                                 handleSetStatus(ann.id, "accepted");
                               }}
-                              className="inline-flex items-center gap-1 rounded-md border border-[#E6DFD2] px-2 py-1 text-[11px] font-medium text-emerald-800 hover:bg-emerald-50"
+                              className="inline-flex items-center gap-1 rounded-md border border-[#E3DAF0] px-2 py-1 text-[11px] font-medium text-[#552985] hover:bg-[#EFE9F8]"
                               title="Confirm this markup"
                             >
                               <Check className="h-3 w-3" />
@@ -818,7 +818,7 @@ export function AnnotatedPaper({
                                 e.stopPropagation();
                                 handleSetStatus(ann.id, "dismissed");
                               }}
-                              className="inline-flex items-center gap-1 rounded-md border border-[#E6DFD2] px-2 py-1 text-[11px] font-medium text-stone-600 hover:bg-stone-100"
+                              className="inline-flex items-center gap-1 rounded-md border border-[#E3DAF0] px-2 py-1 text-[11px] font-medium text-[#5D5E60] hover:bg-[#F7F4FA]"
                               title="Dismiss this AI suggestion"
                             >
                               <X className="h-3 w-3" />
@@ -831,7 +831,7 @@ export function AnnotatedPaper({
                                 e.stopPropagation();
                                 handleSetStatus(ann.id, "pending");
                               }}
-                              className="inline-flex items-center gap-1 rounded-md border border-[#E6DFD2] px-2 py-1 text-[11px] font-medium text-stone-700 hover:bg-stone-100"
+                              className="inline-flex items-center gap-1 rounded-md border border-[#E3DAF0] px-2 py-1 text-[11px] font-medium text-[#2D233D] hover:bg-[#F7F4FA]"
                             >
                               <RotateCcw className="h-3 w-3" />
                               <span>Restore</span>
@@ -847,7 +847,7 @@ export function AnnotatedPaper({
                               );
                               setNoteDraft(ann.teacherNote);
                             }}
-                            className="inline-flex items-center gap-1 rounded-md border border-[#E6DFD2] px-2 py-1 text-[11px] font-medium text-stone-700 hover:bg-stone-100"
+                            className="inline-flex items-center gap-1 rounded-md border border-[#E3DAF0] px-2 py-1 text-[11px] font-medium text-[#2D233D] hover:bg-[#F7F4FA]"
                             title="Add teacher note"
                           >
                             <MessageSquarePlus className="h-3 w-3" />
@@ -858,31 +858,31 @@ export function AnnotatedPaper({
 
                       <div className="mt-2.5 flex flex-wrap items-baseline gap-2 text-sm">
                         <span
-                          className={`rounded bg-stone-100 px-1.5 py-0.5 font-serif-paper ${
+                          className={`rounded bg-[#F7F5FA] px-1.5 py-0.5 font-serif-paper ${
                             ann.suggestedRevision && !isDismissed
-                              ? "line-through decoration-red-400 text-stone-600"
-                              : "text-stone-900"
+                              ? "line-through decoration-red-400 text-[#5D5E60]"
+                              : "text-[#2D233D]"
                           }`}
                         >
                           &ldquo;{ann.quote}&rdquo;
                         </span>
                         {ann.suggestedRevision && (
                           <>
-                            <span className="text-stone-400">→</span>
-                            <span className="rounded bg-emerald-50 px-1.5 py-0.5 font-serif-paper font-semibold text-emerald-900">
+                            <span className="text-[#997FBC]">→</span>
+                            <span className="rounded bg-[#EFE9F8] px-1.5 py-0.5 font-serif-paper font-semibold text-[#552985]">
                               &ldquo;{ann.suggestedRevision}&rdquo;
                             </span>
                           </>
                         )}
                       </div>
 
-                      <p className="mt-2 text-xs leading-relaxed text-stone-700">
+                      <p className="mt-2 text-xs leading-relaxed text-[#5D5E60]">
                         {ann.explanation}
                       </p>
 
                       {ann.teacherNote && editingNoteId !== ann.id && (
-                        <div className="mt-2 rounded-lg bg-[#FAF8F4] px-3 py-2 text-xs text-stone-800">
-                          <span className="font-semibold text-[#1F5E4B]">
+                        <div className="mt-2 rounded-lg bg-[#F7F4FA] px-3 py-2 text-xs text-[#2D233D]">
+                          <span className="font-semibold text-[#552985]">
                             Teacher Note:{" "}
                           </span>
                           {ann.teacherNote}
@@ -899,12 +899,12 @@ export function AnnotatedPaper({
                             value={noteDraft}
                             onChange={(e) => setNoteDraft(e.target.value)}
                             placeholder="Add custom teacher guidance for the student..."
-                            className="flex-1 rounded-lg border border-[#E6DFD2] px-2.5 py-1.5 text-xs outline-none focus:border-[#1F5E4B]"
+                            className="flex-1 rounded-lg border border-[#E3DAF0] px-2.5 py-1.5 text-xs outline-none focus:border-[#552985]"
                           />
                           <button
                             type="button"
                             onClick={() => handleSaveTeacherNote(ann.id)}
-                            className="rounded-lg bg-[#1F5E4B] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#174839]"
+                            className="rounded-lg bg-[#552985] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#633C8D]"
                           >
                             Save
                           </button>

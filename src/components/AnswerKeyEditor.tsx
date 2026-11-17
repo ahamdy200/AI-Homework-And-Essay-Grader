@@ -57,20 +57,20 @@ export function AnswerKeyEditor({
     "1. c\n2. B\n3. D\n4. A\n5. Essay: Explain the theme of honesty and support your answer with one specific detail from the story.";
 
   return (
-    <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/35 p-4">
+    <div className="rounded-xl border border-[#D7CBE8] bg-[#F7F4FA]/75 p-4">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-950">
-            <KeyRound className="h-3.5 w-3.5 text-[#1F5E4B]" />
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#552985]">
+            <KeyRound className="h-3.5 w-3.5 text-[#7F5FA8]" />
             <span>Model Answer / Answer Key (MCQs &amp; Essays)</span>
           </div>
-          <p className="mt-0.5 text-[11px] text-stone-600">
+          <p className="mt-0.5 text-[11px] text-[#5D5E60]">
             Paste mixed MCQ keys (e.g.{" "}
-            <code className="rounded bg-white/80 px-1 py-0.5 font-mono text-[10px]">
+            <code className="rounded bg-white px-1 py-0.5 font-mono text-[10px] text-[#552985]">
               1.c 2.B and 3. D
             </code>
             ) plus open/essay guidelines (e.g.{" "}
-            <code className="rounded bg-white/80 px-1 py-0.5 font-mono text-[10px]">
+            <code className="rounded bg-white px-1 py-0.5 font-mono text-[10px] text-[#552985]">
               5. Essay: ...
             </code>
             ) or upload a key image/PDF.
@@ -80,9 +80,9 @@ export function AnswerKeyEditor({
           <button
             type="button"
             onClick={() => onChangeText(MIXED_EXAMPLE)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-emerald-200 bg-white px-2 py-1 text-[10px] font-medium text-[#1F5E4B] transition hover:bg-emerald-50"
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[#D7CBE8] bg-white px-2 py-1 text-[10px] font-medium text-[#552985] transition hover:bg-[#EFE9F8]"
           >
-            <Sparkles className="h-3 w-3" />
+            <Sparkles className="h-3 w-3 text-[#7F5FA8]" />
             Insert MCQ + Essay Example
           </button>
         )}
@@ -95,13 +95,13 @@ export function AnswerKeyEditor({
         placeholder={
           "Example (mixed quiz + essay):\n1. c 2. B and 3. D\n5. Essay: Explain the main character's decision using one example from the passage."
         }
-        className="w-full rounded-xl border border-[#E6DFD2] bg-white p-3 text-xs leading-relaxed text-stone-900 placeholder:text-stone-400 outline-none focus:border-[#1F5E4B]"
+        className="w-full rounded-xl border border-[#DFD5EC] bg-white p-3 text-xs leading-relaxed text-[#2D2A32] placeholder:text-[#8E8899] outline-none focus:border-[#552985]"
       />
 
       {(parsedKey.mcqKeys.length > 0 || parsedKey.openQuestions.length > 0) && (
-        <div className="mt-2 rounded-lg border border-emerald-200/80 bg-white/90 px-2.5 py-2">
-          <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-            <CheckCircle2 className="h-3 w-3 text-emerald-700" />
+        <div className="mt-2 rounded-lg border border-[#DFD5EC] bg-white px-2.5 py-2">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#552985]">
+            <CheckCircle2 className="h-3 w-3 text-[#7F5FA8]" />
             <span>
               Auto-Detected Key ({parsedKey.mcqKeys.length} MCQ
               {parsedKey.mcqKeys.length === 1 ? "" : "s"}
@@ -115,12 +115,12 @@ export function AnswerKeyEditor({
             {parsedKey.mcqKeys.map((k) => (
               <span
                 key={`mcq-${k.questionNumber}`}
-                className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-900"
+                className="inline-flex items-center gap-1 rounded-md border border-[#D7CBE8] bg-[#F7F4FA] px-2 py-0.5 text-[11px] font-semibold text-[#552985]"
               >
-                <span className="text-emerald-700">Q{k.questionNumber}:</span>
+                <span className="text-[#7F5FA8]">Q{k.questionNumber}:</span>
                 <span className="font-mono">{k.expectedAnswer}</span>
                 {k.maxPoints !== 1 && (
-                  <span className="text-[10px] font-normal text-emerald-700">
+                  <span className="text-[10px] font-normal text-[#7F5FA8]">
                     ({k.maxPoints}pt)
                   </span>
                 )}
@@ -130,7 +130,7 @@ export function AnswerKeyEditor({
               <span
                 key={`open-${q.questionNumber}`}
                 title={q.label}
-                className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-900"
+                className="inline-flex items-center gap-1 rounded-md border border-[#C8B9DE] bg-[#FBF9FD] px-2 py-0.5 text-[11px] font-medium text-[#633C8D]"
               >
                 <span className="font-semibold">Q{q.questionNumber}:</span>
                 <span className="max-w-[220px] truncate">{q.label}</span>
@@ -155,14 +155,14 @@ export function AnswerKeyEditor({
                   className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs ${
                     isRemoved
                       ? "border-red-200 bg-red-50/70 text-stone-400 line-through"
-                      : "border-[#E6DFD2] bg-white text-stone-800"
+                      : "border-[#E3DAF0] bg-white text-[#2D233D]"
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     {att.mimeType === "application/pdf" ? (
                       <FileText className="h-3.5 w-3.5 shrink-0 text-red-700" />
                     ) : (
-                      <FileImage className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+                      <FileImage className="h-3.5 w-3.5 shrink-0 text-[#552985]" />
                     )}
                     <a
                       href={att.urlPath}
@@ -177,7 +177,7 @@ export function AnswerKeyEditor({
                     <button
                       type="button"
                       onClick={() => onToggleRemoveExisting(att.id)}
-                      className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                      className="rounded p-1 text-[#5D5E60] hover:bg-[#F7F4FA] hover:text-[#2D233D]"
                       title={isRemoved ? "Keep file" : "Remove file"}
                     >
                       {isRemoved ? (
@@ -211,8 +211,8 @@ export function AnswerKeyEditor({
         onClick={() => fileInputRef.current?.click()}
         className={`mt-2.5 cursor-pointer rounded-xl border border-dashed px-3 py-3 text-center transition ${
           isDragging
-            ? "border-[#1F5E4B] bg-emerald-100/60"
-            : "border-emerald-300/80 bg-white/80 hover:border-[#1F5E4B]"
+            ? "border-[#552985] bg-[#EFE9F8]"
+            : "border-[#AE97C5] bg-white hover:border-[#552985]"
         }`}
       >
         <input
@@ -228,12 +228,12 @@ export function AnswerKeyEditor({
           }}
           className="hidden"
         />
-        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-stone-700">
-          <Upload className="h-3.5 w-3.5 text-[#1F5E4B]" />
+        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[#2D2A32]">
+          <Upload className="h-3.5 w-3.5 text-[#552985]" />
           <span className="font-medium">
             Upload Answer Key Photo or PDF (optional)
           </span>
-          <span className="text-[11px] text-stone-500">
+          <span className="text-[11px] text-[#5D5E60]">
             PNG, JPG, WEBP, HEIC, PDF, TXT
           </span>
         </div>
@@ -244,13 +244,13 @@ export function AnswerKeyEditor({
           {newFiles.map((file, idx) => (
             <div
               key={`${file.name}-${idx}`}
-              className="flex items-center justify-between rounded-lg border border-[#E6DFD2] bg-white px-2.5 py-1.5 text-xs"
+              className="flex items-center justify-between rounded-lg border border-[#E3DAF0] bg-white px-2.5 py-1.5 text-xs"
             >
               <div className="flex min-w-0 items-center gap-2">
                 {file.type === "application/pdf" ? (
-                  <FileText className="h-3.5 w-3.5 shrink-0 text-red-700" />
+                  <FileText className="h-3.5 w-3.5 shrink-0 text-[#633C8D]" />
                 ) : (
-                  <FileImage className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+                  <FileImage className="h-3.5 w-3.5 shrink-0 text-[#552985]" />
                 )}
                 <span className="truncate font-medium text-stone-800">
                   {file.name}

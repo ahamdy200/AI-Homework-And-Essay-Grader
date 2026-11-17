@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { Loader2, Trash2 } from "lucide-react";
 import { exportSubmissionsToCsv, formatStudentFeedbackMarkdown } from "@/lib/export";
 import { applyMcqResultsToCriteria } from "@/lib/mcq";
 import type {
@@ -54,6 +55,12 @@ export function WorkbenchClient({
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] =
     useState<Assignment | null>(null);
+  const [assignmentPendingDelete, setAssignmentPendingDelete] =
+    useState<Assignment | null>(null);
+  const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
+  const [deleteAssignmentError, setDeleteAssignmentError] = useState<
+    string | null
+  >(null);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false);
 
@@ -182,6 +189,47 @@ export function WorkbenchClient({
     });
   };
 
+  const handleDeleteAssignment = async (id: string) => {
+    const res = await fetch(
+      `/api/assignments?id=${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    );
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(json.error || "Failed to delete assignment.");
+    }
+
+    setAssignments((prev) => prev.filter((a) => a.id !== id));
+    if (selectedAssignmentFilter === id) {
+      setSelectedAssignmentFilter("all");
+    }
+    if (editingAssignment?.id === id) {
+      setAssignmentModalOpen(false);
+      setEditingAssignment(null);
+    }
+  };
+
+  const requestDeleteAssignment = (assignment: Assignment) => {
+    setDeleteAssignmentError(null);
+    setAssignmentPendingDelete(assignment);
+  };
+
+  const confirmDeletePendingAssignment = async () => {
+    if (!assignmentPendingDelete) return;
+    setDeleteAssignmentError(null);
+    setIsDeletingAssignment(true);
+    try {
+      await handleDeleteAssignment(assignmentPendingDelete.id);
+      setAssignmentPendingDelete(null);
+    } catch (err) {
+      setDeleteAssignmentError(
+        err instanceof Error ? err.message : "Failed to delete assignment."
+      );
+    } finally {
+      setIsDeletingAssignment(false);
+    }
+  };
+
   const handleFollowUpResult = (updatedSubmission: Submission) => {
     setSubmissions((prev) =>
       prev.map((s) =>
@@ -267,6 +315,7 @@ export function WorkbenchClient({
                 setEditingAssignment(assignment);
                 setAssignmentModalOpen(true);
               }}
+              onDeleteAssignment={requestDeleteAssignment}
               onDeleteSubmission={handleDeleteSubmission}
               onSearchChange={setSearchQuery}
             />
@@ -285,6 +334,7 @@ export function WorkbenchClient({
                   setEditingAssignment(assignment);
                   setAssignmentModalOpen(true);
                 }}
+                onDeleteAssignment={requestDeleteAssignment}
                 onSubmissionCreated={handleSubmissionCreated}
                 onCancel={
                   activeSubmission ? () => setIsComposingNew(false) : undefined
@@ -315,9 +365,9 @@ export function WorkbenchClient({
 
         {/* Mobile / Tablet Compact Bottom/Drawer Fallback for Grading Sidebar */}
         {!isComposingNew && activeSubmission && (
-          <div className="border-t border-[#E6DFD2] bg-white p-4 xl:hidden">
+          <div className="border-t border-[#E3DAF0] bg-white p-4 xl:hidden">
             <details>
-              <summary className="cursor-pointer text-xs font-semibold text-[#1F5E4B]">
+              <summary className="cursor-pointer text-xs font-semibold text-[#552985]">
                 Open Rubric Scorecard, Teacher Comment &amp; Co-Pilot
               </summary>
               <div className="mt-3 max-h-[60vh] overflow-y-auto">
@@ -408,7 +458,62 @@ export function WorkbenchClient({
             prev.map((a) => (a.id === updated.id ? updated : a))
           );
         }}
+        onDeleted={handleDeleteAssignment}
       />
+
+      {assignmentPendingDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirm Delete Assignment"
+          className="no-print fixed inset-0 z-50 flex items-center justify-center bg-[#2D233D]/45 p-4 backdrop-blur-xs"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[#DFD5EC] bg-white p-6 shadow-xl">
+            <h2 className="font-serif-paper text-lg font-semibold text-[#2D233D]">
+              Delete Assignment?
+            </h2>
+            <p className="mt-2 text-sm text-[#5D5E60]">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-[#2D233D]">
+                {assignmentPendingDelete.title}
+              </span>
+              ? This removes its rubric and any attached answer key files.
+              Existing graded submissions in your queue will remain intact.
+            </p>
+            {deleteAssignmentError && (
+              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                {deleteAssignmentError}
+              </div>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={isDeletingAssignment}
+                onClick={() => {
+                  setAssignmentPendingDelete(null);
+                  setDeleteAssignmentError(null);
+                }}
+                className="rounded-xl border border-[#DFD5EC] px-4 py-2 text-xs font-medium text-[#5D5E60] hover:bg-[#F7F4FA] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingAssignment}
+                onClick={confirmDeletePendingAssignment}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {isDeletingAssignment ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                <span>Delete Assignment</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

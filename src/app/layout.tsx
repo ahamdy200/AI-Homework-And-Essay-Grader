@@ -21,9 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RedPen Studio — English Homework & Essay Grader",
+  title: "RCIS Grading Studio — Mr. Ahmed Hamdy | English Homework & Essay Grader",
   description:
-    "Teacher Grading Workbench for English essays, reading responses, and handwritten homework powered by Gemini 3.8 Flash.",
+    "The Royal College International School (RCIS) Teacher Grading Workbench for English essays, quizzes, and handwritten homework powered by Gemini.",
 };
 
 export default function RootLayout({
@@ -36,7 +36,7 @@ export default function RootLayout({
       lang="en"
       className={`${newsreader.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-screen antialiased selection:bg-amber-200/70 selection:text-stone-900">
+      <body className="min-h-screen antialiased selection:bg-[#AE97C5]/45 selection:text-[#2D233D]">
         {children}
       </body>
     </html>

@@ -10,6 +10,7 @@ import {
   Loader2,
   Pencil,
   Sparkles,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -31,6 +32,7 @@ interface NewSubmissionFormProps {
   sessionApiKey: string;
   onOpenSettings: () => void;
   onEditAssignment: (assignment: Assignment) => void;
+  onDeleteAssignment: (assignment: Assignment) => void;
   onSubmissionCreated: (submission: Submission) => void;
   onCancel?: () => void;
 }
@@ -42,6 +44,7 @@ export function NewSubmissionForm({
   sessionApiKey,
   onOpenSettings,
   onEditAssignment,
+  onDeleteAssignment,
   onSubmissionCreated,
   onCancel,
 }: NewSubmissionFormProps) {
@@ -68,8 +71,14 @@ export function NewSubmissionForm({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const effectiveAssignmentId =
+    selectedAssignmentId === "custom" ||
+    assignments.some((a) => a.id === selectedAssignmentId)
+      ? selectedAssignmentId
+      : (assignments[0]?.id ?? "custom");
+
   const selectedAssignment = assignments.find(
-    (a) => a.id === selectedAssignmentId
+    (a) => a.id === effectiveAssignmentId
   );
   const selectedPreset =
     presets.find((p) => p.id === selectedPresetId) ?? presets[0];
@@ -139,7 +148,7 @@ export function NewSubmissionForm({
       const formData = new FormData();
       formData.append("studentName", studentName.trim());
       formData.append("studentIdCode", studentIdCode.trim());
-      formData.append("assignmentId", selectedAssignmentId);
+      formData.append("assignmentId", effectiveAssignmentId);
       formData.append("tone", tone);
       formData.append("thinkingLevel", thinkingLevel);
       formData.append("inputText", inputText);
@@ -207,18 +216,18 @@ export function NewSubmissionForm({
   const wordCount = countWords(inputText);
 
   return (
-    <div className="workbench-scroll h-full overflow-y-auto bg-[#FAF8F4]/50 p-4 sm:p-8">
+    <div className="workbench-scroll h-full overflow-y-auto bg-[#F7F5FA]/70 p-4 sm:p-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
-              <Sparkles className="h-3.5 w-3.5" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DFD5EC] bg-[#F7F4FA] px-2.5 py-1 text-xs font-medium text-[#552985]">
+              <Sparkles className="h-3.5 w-3.5 text-[#7F5FA8]" />
               Powered by Gemini 3.8 Flash (Multimodal Vision + Rubric Engine)
             </span>
-            <h2 className="font-serif-paper mt-2 text-2xl font-semibold text-stone-900">
+            <h2 className="font-serif-paper mt-2 text-2xl font-semibold text-[#2D233D]">
               Grade Student Homework or Essay
             </h2>
-            <p className="mt-1 text-sm text-stone-600">
+            <p className="mt-1 text-sm text-[#5D5E60]">
               Paste typed writing or upload photos and PDFs of handwritten student
               work. You can review and adjust every annotation and score afterward.
             </p>
@@ -227,7 +236,7 @@ export function NewSubmissionForm({
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-lg border border-[#E6DFD2] bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
+              className="rounded-lg border border-[#E3DAF0] bg-white px-3 py-1.5 text-xs font-medium text-[#2D233D] hover:bg-[#F7F4FA]"
             >
               Back to Paper
             </button>
@@ -235,10 +244,10 @@ export function NewSubmissionForm({
         </div>
 
         {/* Sample Essay Quick Loaders */}
-        <div className="mb-6 rounded-2xl border border-[#E6DFD2] bg-white p-4 shadow-2xs">
+        <div className="mb-6 rounded-2xl border border-[#E3DAF0] bg-white p-4 shadow-2xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-stone-700">
-              <BookOpenCheck className="h-4 w-4 text-[#1F5E4B]" />
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#2D233D]">
+              <BookOpenCheck className="h-4 w-4 text-[#552985]" />
               <span>Try a Sample Student Submission:</span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -247,7 +256,7 @@ export function NewSubmissionForm({
                   key={sample.id}
                   type="button"
                   onClick={() => handleLoadSample(sample)}
-                  className="rounded-lg border border-[#E6DFD2] bg-[#FAF8F4] px-2.5 py-1 text-xs font-medium text-stone-700 transition hover:border-[#1F5E4B] hover:bg-emerald-50 hover:text-emerald-900"
+                  className="rounded-lg border border-[#E3DAF0] bg-[#F7F5FA] px-2.5 py-1 text-xs font-medium text-[#2D233D] transition hover:border-[#552985] hover:bg-[#EFE9F8] hover:text-[#552985]"
                 >
                   {sample.label}
                 </button>
@@ -258,7 +267,7 @@ export function NewSubmissionForm({
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 rounded-2xl border border-[#E6DFD2] bg-white p-6 shadow-sm"
+          className="space-y-6 rounded-2xl border border-[#E3DAF0] bg-white p-6 shadow-sm"
         >
           {error && (
             <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-800">
@@ -270,7 +279,7 @@ export function NewSubmissionForm({
           {/* Student Info */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-xs font-semibold text-stone-700">
+              <label className="mb-1.5 block text-xs font-semibold text-[#2D233D]">
                 Student Name *
               </label>
               <input
@@ -279,11 +288,11 @@ export function NewSubmissionForm({
                 onChange={(e) => setStudentName(e.target.value)}
                 placeholder="e.g., Maya Lin"
                 required
-                className="w-full rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/50 px-3.5 py-2.5 text-sm text-stone-900 outline-none focus:border-[#1F5E4B] focus:bg-white"
+                className="w-full rounded-xl border border-[#E3DAF0] bg-[#F7F5FA]/60 px-3.5 py-2.5 text-sm text-[#2D233D] outline-none focus:border-[#552985] focus:bg-white"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-stone-700">
+              <label className="mb-1.5 block text-xs font-semibold text-[#2D233D]">
                 Class / Student ID (Optional)
               </label>
               <input
@@ -291,7 +300,7 @@ export function NewSubmissionForm({
                 value={studentIdCode}
                 onChange={(e) => setStudentIdCode(e.target.value)}
                 placeholder="e.g., Per. 3 • #14"
-                className="w-full rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/50 px-3.5 py-2.5 text-sm text-stone-900 outline-none focus:border-[#1F5E4B] focus:bg-white"
+                className="w-full rounded-xl border border-[#E3DAF0] bg-[#F7F5FA]/60 px-3.5 py-2.5 text-sm text-[#2D233D] outline-none focus:border-[#552985] focus:bg-white"
               />
             </div>
           </div>
@@ -299,16 +308,16 @@ export function NewSubmissionForm({
           {/* Assignment & Rubric Selection */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-stone-700">
+              <label className="mb-1.5 block text-xs font-semibold text-[#2D233D]">
                 Assignment / Prompt
               </label>
               <select
-                value={selectedAssignmentId}
+                value={effectiveAssignmentId}
                 onChange={(e) => {
                   setSelectedAssignmentId(e.target.value);
                   setShowPerSubmissionKey(false);
                 }}
-                className="w-full rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/50 px-3.5 py-2.5 text-sm text-stone-900 outline-none focus:border-[#1F5E4B] focus:bg-white"
+                className="w-full rounded-xl border border-[#E3DAF0] bg-[#F7F5FA]/60 px-3.5 py-2.5 text-sm text-[#2D233D] outline-none focus:border-[#552985] focus:bg-white"
               >
                 {assignments.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -320,28 +329,28 @@ export function NewSubmissionForm({
             </div>
 
             {selectedAssignment ? (
-              <div className="rounded-xl border border-[#E6DFD2] bg-[#FAF8F4] px-3.5 py-2.5">
-                <div className="text-[11px] font-semibold tracking-wider text-stone-500 uppercase">
+              <div className="rounded-xl border border-[#E3DAF0] bg-[#F7F4FA] px-3.5 py-2.5">
+                <div className="text-[11px] font-semibold tracking-wider text-[#7F5FA8] uppercase">
                   Active Rubric ({selectedAssignment.criteria.length} criteria)
                 </div>
-                <div className="mt-0.5 text-xs font-medium text-stone-800">
+                <div className="mt-0.5 text-xs font-medium text-[#2D233D]">
                   {selectedAssignment.rubricName}
                 </div>
                 {selectedAssignment.prompt && (
-                  <p className="mt-1 line-clamp-2 text-[11px] text-stone-600">
+                  <p className="mt-1 line-clamp-2 text-[11px] text-[#5D5E60]">
                     {selectedAssignment.prompt}
                   </p>
                 )}
               </div>
             ) : (
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-stone-700">
+                <label className="mb-1.5 block text-xs font-semibold text-[#2D233D]">
                   Rubric Preset
                 </label>
                 <select
                   value={selectedPresetId}
                   onChange={(e) => setSelectedPresetId(e.target.value)}
-                  className="w-full rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/50 px-3.5 py-2.5 text-sm text-stone-900 outline-none focus:border-[#1F5E4B] focus:bg-white"
+                  className="w-full rounded-xl border border-[#E3DAF0] bg-[#F7F5FA]/60 px-3.5 py-2.5 text-sm text-[#2D233D] outline-none focus:border-[#552985] focus:bg-white"
                 >
                   {presets.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -354,20 +363,20 @@ export function NewSubmissionForm({
           </div>
 
           {selectedAssignment && (
-            <div className="space-y-3 rounded-xl border border-emerald-200/80 bg-emerald-50/35 p-3.5">
+            <div className="space-y-3 rounded-xl border border-[#DFD5EC] bg-[#F7F4FA] p-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs">
-                  <KeyRound className="h-3.5 w-3.5 text-[#1F5E4B]" />
+                  <KeyRound className="h-3.5 w-3.5 text-[#552985]" />
                   {selectedAssignment.modelAnswerText ||
                   selectedAssignment.modelAnswerAttachments.length > 0 ? (
-                    <span className="font-semibold text-emerald-950">
+                    <span className="font-semibold text-[#552985]">
                       Answer Key Attached
                       {selectedAssignment.modelAnswerAttachments.length > 0
                         ? ` (${selectedAssignment.modelAnswerAttachments.length} file${selectedAssignment.modelAnswerAttachments.length > 1 ? "s" : ""})`
                         : ""}
                     </span>
                   ) : (
-                    <span className="font-medium text-stone-700">
+                    <span className="font-medium text-[#2D233D]">
                       No saved Model Answer / Answer Key for this assignment yet
                     </span>
                   )}
@@ -377,9 +386,9 @@ export function NewSubmissionForm({
                   <button
                     type="button"
                     onClick={() => onEditAssignment(selectedAssignment)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-[#E6DFD2] bg-white px-2.5 py-1 text-[11px] font-medium text-stone-700 hover:bg-stone-50"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#E3DAF0] bg-white px-2.5 py-1 text-[11px] font-medium text-[#2D233D] hover:bg-[#EFE9F8]"
                   >
-                    <Pencil className="h-3 w-3" />
+                    <Pencil className="h-3 w-3 text-[#7F5FA8]" />
                     <span>
                       {selectedAssignment.modelAnswerText ||
                       selectedAssignment.modelAnswerAttachments.length > 0
@@ -389,8 +398,18 @@ export function NewSubmissionForm({
                   </button>
                   <button
                     type="button"
+                    onClick={() => onDeleteAssignment(selectedAssignment)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#E3DAF0] bg-white px-2.5 py-1 text-[11px] font-medium text-[#5D5E60] transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                    title="Delete current assignment"
+                    aria-label={`Delete ${selectedAssignment.title}`}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span>Delete Assignment</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setShowPerSubmissionKey((v) => !v)}
-                    className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-[11px] font-medium text-[#1F5E4B] hover:bg-emerald-50"
+                    className="rounded-lg border border-[#AE97C5] bg-white px-2.5 py-1 text-[11px] font-medium text-[#552985] hover:bg-[#EFE9F8]"
                   >
                     {showPerSubmissionKey
                       ? "Use Assignment Key"
@@ -400,7 +419,7 @@ export function NewSubmissionForm({
               </div>
 
               {selectedAssignment.modelAnswerText && !showPerSubmissionKey && (
-                <p className="line-clamp-2 rounded-lg border border-[#E6DFD2] bg-white px-3 py-2 text-[11px] text-stone-600 whitespace-pre-wrap">
+                <p className="line-clamp-2 rounded-lg border border-[#E3DAF0] bg-white px-3 py-2 text-[11px] text-[#5D5E60] whitespace-pre-wrap">
                   {selectedAssignment.modelAnswerText}
                 </p>
               )}
@@ -418,9 +437,9 @@ export function NewSubmissionForm({
           )}
 
           {!selectedAssignment && (
-            <div className="grid grid-cols-1 gap-4 rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/70 p-4">
+            <div className="grid grid-cols-1 gap-4 rounded-xl border border-[#E3DAF0] bg-[#F7F4FA] p-4">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-stone-700">
+                <label className="mb-1 block text-xs font-semibold text-[#2D233D]">
                   Custom Assignment Title
                 </label>
                 <input
@@ -428,11 +447,11 @@ export function NewSubmissionForm({
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
                   placeholder="e.g., To Kill a Mockingbird Chapter 9 Response"
-                  className="w-full rounded-lg border border-[#E6DFD2] bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#1F5E4B]"
+                  className="w-full rounded-lg border border-[#E3DAF0] bg-white px-3 py-2 text-sm text-[#2D233D] outline-none focus:border-[#552985]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-stone-700">
+                <label className="mb-1 block text-xs font-semibold text-[#2D233D]">
                   Homework Prompt / Grading Instructions (Optional)
                 </label>
                 <textarea
@@ -440,7 +459,7 @@ export function NewSubmissionForm({
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
                   placeholder="Describe what the student was asked to write or answer..."
-                  className="w-full rounded-lg border border-[#E6DFD2] bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-[#1F5E4B]"
+                  className="w-full rounded-lg border border-[#E3DAF0] bg-white px-3 py-2 text-sm text-[#2D233D] outline-none focus:border-[#552985]"
                 />
               </div>
 
@@ -457,10 +476,10 @@ export function NewSubmissionForm({
           {/* Tone & Reasoning Depth */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-stone-700">
+              <label className="mb-1.5 block text-xs font-semibold text-[#2D233D]">
                 Feedback Tone &amp; Strictness
               </label>
-              <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-[#E6DFD2] bg-[#FAF8F4] p-1">
+              <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-[#E3DAF0] bg-[#F7F5FA] p-1">
                 {(
                   [
                     { id: "encouraging", label: "Encouraging" },
@@ -474,8 +493,8 @@ export function NewSubmissionForm({
                     onClick={() => setTone(item.id)}
                     className={`rounded-lg py-1.5 text-xs font-medium transition ${
                       tone === item.id
-                        ? "bg-white text-stone-900 shadow-xs"
-                        : "text-stone-600 hover:text-stone-900"
+                        ? "bg-[#552985] text-white shadow-xs"
+                        : "text-[#5D5E60] hover:text-[#2D233D]"
                     }`}
                   >
                     {item.label}
@@ -485,10 +504,10 @@ export function NewSubmissionForm({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-stone-700">
+              <label className="mb-1.5 block text-xs font-semibold text-[#2D233D]">
                 Gemini 3.8 Flash Reasoning Depth
               </label>
-              <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-[#E6DFD2] bg-[#FAF8F4] p-1">
+              <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-[#E3DAF0] bg-[#F7F5FA] p-1">
                 {(
                   [
                     { id: "low", label: "Quick (Low)" },
@@ -502,8 +521,8 @@ export function NewSubmissionForm({
                     onClick={() => setThinkingLevel(item.id)}
                     className={`rounded-lg py-1.5 text-xs font-medium transition ${
                       thinkingLevel === item.id
-                        ? "bg-white text-stone-900 shadow-xs"
-                        : "text-stone-600 hover:text-stone-900"
+                        ? "bg-[#552985] text-white shadow-xs"
+                        : "text-[#5D5E60] hover:text-[#2D233D]"
                     }`}
                   >
                     {item.label}
@@ -516,10 +535,10 @@ export function NewSubmissionForm({
           {/* Student Text Input */}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <label className="text-xs font-semibold text-stone-700">
+              <label className="text-xs font-semibold text-[#2D233D]">
                 Student Essay or Homework Text
               </label>
-              <span className="font-mono-score text-xs text-stone-500">
+              <span className="font-mono-score text-xs text-[#5D5E60]">
                 {wordCount} words
               </span>
             </div>
@@ -528,13 +547,13 @@ export function NewSubmissionForm({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Paste the student's essay or homework response here — or leave blank if uploading handwritten photos or PDFs below..."
-              className="font-serif-paper w-full rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/40 p-4 text-[15px] leading-relaxed text-stone-900 placeholder:font-sans placeholder:text-sm placeholder:text-stone-400 outline-none focus:border-[#1F5E4B] focus:bg-white"
+              className="font-serif-paper w-full rounded-xl border border-[#E3DAF0] bg-[#F7F5FA]/50 p-4 text-[15px] leading-relaxed text-[#2D233D] placeholder:font-sans placeholder:text-sm placeholder:text-[#8E8A96] outline-none focus:border-[#552985] focus:bg-white"
             />
           </div>
 
           {/* Multimodal Photo & PDF Uploader */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-stone-700">
+            <label className="mb-1.5 block text-xs font-semibold text-[#2D233D]">
               Handwritten Photos or PDF Uploads (Optional — up to 6 files)
             </label>
             <div
@@ -553,8 +572,8 @@ export function NewSubmissionForm({
               onClick={() => fileInputRef.current?.click()}
               className={`cursor-pointer rounded-xl border-2 border-dashed p-5 text-center transition ${
                 isDragging
-                  ? "border-[#1F5E4B] bg-emerald-50/70"
-                  : "border-[#DDD4C5] bg-[#FAF8F4]/50 hover:border-stone-400"
+                  ? "border-[#552985] bg-[#EFE9F8]/80"
+                  : "border-[#C8B9DE] bg-[#F7F4FA]/70 hover:border-[#7F5FA8] hover:bg-[#EFE9F8]/40"
               }`}
             >
               <input
@@ -570,12 +589,12 @@ export function NewSubmissionForm({
                 }}
                 className="hidden"
               />
-              <Upload className="mx-auto mb-2 h-6 w-6 text-stone-500" />
-              <p className="text-xs font-medium text-stone-700">
+              <Upload className="mx-auto mb-2 h-6 w-6 text-[#7F5FA8]" />
+              <p className="text-xs font-medium text-[#2D233D]">
                 Drop handwritten essay photos, scanned PDFs, or .txt files here —
                 or click to browse
               </p>
-              <p className="mt-1 text-[11px] text-stone-500">
+              <p className="mt-1 text-[11px] text-[#5D5E60]">
                 Supports PNG, JPG, WEBP, HEIC, PDF (high-resolution vision OCR), and TXT
               </p>
             </div>
@@ -585,19 +604,19 @@ export function NewSubmissionForm({
                 {files.map((file, idx) => (
                   <div
                     key={`${file.name}-${idx}`}
-                    className="flex items-center justify-between rounded-xl border border-[#E6DFD2] bg-[#FAF8F4] px-3 py-2"
+                    className="flex items-center justify-between rounded-xl border border-[#E3DAF0] bg-[#F7F4FA] px-3 py-2"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       {file.type === "application/pdf" ? (
-                        <FileText className="h-4 w-4 shrink-0 text-red-700" />
+                        <FileText className="h-4 w-4 shrink-0 text-[#552985]" />
                       ) : (
-                        <FileImage className="h-4 w-4 shrink-0 text-emerald-700" />
+                        <FileImage className="h-4 w-4 shrink-0 text-[#7F5FA8]" />
                       )}
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-medium text-stone-800">
+                        <p className="truncate text-xs font-medium text-[#2D233D]">
                           {file.name}
                         </p>
-                        <p className="text-[10px] text-stone-500">
+                        <p className="text-[10px] text-[#5D5E60]">
                           {(file.size / 1024).toFixed(0)} KB
                         </p>
                       </div>
@@ -605,7 +624,7 @@ export function NewSubmissionForm({
                     <button
                       type="button"
                       onClick={() => removeFile(idx)}
-                      className="rounded p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-700"
+                      className="rounded p-1 text-[#5D5E60] hover:bg-[#E3DAF0] hover:text-[#2D233D]"
                       aria-label={`Remove ${file.name}`}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -617,14 +636,14 @@ export function NewSubmissionForm({
           </div>
 
           {/* Submit */}
-          <div className="flex items-center justify-between border-t border-[#E6DFD2] pt-4">
-            <p className="text-xs text-stone-500">
+          <div className="flex items-center justify-between border-t border-[#E3DAF0] pt-4">
+            <p className="text-xs text-[#5D5E60]">
               AI suggestions are completely editable before you export or print.
             </p>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#1F5E4B] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#174839] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#552985] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#633C8D] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>

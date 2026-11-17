@@ -58,16 +58,16 @@ function emptyEntry(n: number): AnswerKeyEntry {
 }
 
 function gradeColor(pct: number): string {
-  if (pct >= 90) return "text-emerald-700";
-  if (pct >= 80) return "text-blue-700";
+  if (pct >= 90) return "text-[#552985]";
+  if (pct >= 80) return "text-[#7F5FA8]";
   if (pct >= 70) return "text-amber-700";
   if (pct >= 60) return "text-orange-700";
   return "text-red-700";
 }
 
 function gradeBg(pct: number): string {
-  if (pct >= 90) return "bg-emerald-50 border-emerald-200";
-  if (pct >= 80) return "bg-blue-50 border-blue-200";
+  if (pct >= 90) return "bg-[#F7F4FA] border-[#C8B9DE]";
+  if (pct >= 80) return "bg-[#FAF7FD] border-[#E3DAF0]";
   if (pct >= 70) return "bg-amber-50 border-amber-200";
   if (pct >= 60) return "bg-orange-50 border-orange-200";
   return "bg-red-50 border-red-200";
@@ -76,7 +76,7 @@ function gradeBg(pct: number): string {
 function statusIcon(status: string) {
   switch (status) {
     case "correct":
-      return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+      return <CheckCircle2 className="h-4 w-4 text-[#552985]" />;
     case "incorrect":
       return <XCircle className="h-4 w-4 text-red-500" />;
     case "partial":
@@ -264,28 +264,36 @@ export function QuickGradeClient({
   // ---- Render ----
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4]">
+    <div className="min-h-screen bg-[#F7F5FA]">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-[#E6DFD2] bg-[#FAF8F4]/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-[#DFD5EC] bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="flex items-center gap-2 text-stone-500 transition hover:text-stone-800"
+              className="flex items-center gap-2 text-[#5D5E60] transition hover:text-[#552985]"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-xs font-medium hidden sm:inline">
                 Back to Workbench
               </span>
             </Link>
-            <div className="h-5 w-px bg-stone-200" />
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#991B1B] text-white">
-                <Sparkles className="h-4 w-4" />
+            <div className="h-5 w-px bg-[#E3DAF0]" />
+            <div className="flex items-center gap-2.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/rcis-logo.png"
+                alt="The Royal College International School"
+                className="h-9 w-9 shrink-0 rounded-lg border border-[#E3DAF0] bg-white object-contain p-0.5"
+              />
+              <div>
+                <h1 className="font-serif text-lg font-semibold tracking-tight text-[#552985] leading-tight">
+                  Quick Grade
+                </h1>
+                <p className="text-[10px] font-medium text-[#5D5E60]">
+                  Mr. Ahmed Hamdy • Fast Answer-Key Scanner
+                </p>
               </div>
-              <h1 className="font-serif text-lg font-semibold tracking-tight text-stone-900">
-                Quick Grade
-              </h1>
             </div>
           </div>
 
@@ -298,25 +306,31 @@ export function QuickGradeClient({
                   placeholder="Gemini API key"
                   value={sessionKey}
                   onChange={(e) => setSessionKey(e.target.value)}
-                  className="w-48 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-stone-800 placeholder:text-amber-600/60 focus:border-amber-400 focus:outline-none"
+                  className="w-48 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-[#2D233D] placeholder:text-amber-600/60 focus:border-amber-400 focus:outline-none"
                 />
               </div>
             )}
             <span
               className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
                 configured
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  ? "border-[#DFD5EC] bg-[#F7F4FA] text-[#552985]"
                   : "border-amber-300 bg-amber-50 text-amber-800"
               }`}
             >
               {configured ? (
-                <CheckCircle2 className="h-3 w-3" />
+                <CheckCircle2 className="h-3 w-3 text-[#7F5FA8]" />
               ) : (
                 <KeyRound className="h-3 w-3" />
               )}
               {configured ? "API Ready" : "Need Key"}
             </span>
           </div>
+        </div>
+        <div className="grid h-1 w-full grid-cols-4">
+          <div className="bg-[#552985]" />
+          <div className="bg-[#7F5FA8]" />
+          <div className="bg-[#997FBC]" />
+          <div className="bg-[#AE97C5]" />
         </div>
       </header>
 
@@ -334,20 +348,20 @@ export function QuickGradeClient({
                     {letterGrade(result.percentage)}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-stone-600">
+                <p className="mt-1 text-sm text-[#5D5E60]">
                   {result.totalScore} / {result.maxScore} points
                   {studentName.trim() ? ` — ${studentName.trim()}` : ""}
                 </p>
               </div>
               <button
                 onClick={handleReset}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white/80 border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-white transition"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/90 border border-[#E3DAF0] px-3 py-1.5 text-xs font-medium text-[#2D233D] hover:bg-white transition"
               >
-                <Camera className="h-3.5 w-3.5" />
+                <Camera className="h-3.5 w-3.5 text-[#552985]" />
                 Grade Another
               </button>
             </div>
-            <p className="mt-3 text-sm text-stone-700 leading-relaxed">
+            <p className="mt-3 text-sm text-[#2D233D] leading-relaxed">
               {result.summaryFeedback}
             </p>
           </div>
@@ -358,35 +372,35 @@ export function QuickGradeClient({
           <div className="space-y-4">
             <button
               onClick={() => setShowKeyEditor(!showKeyEditor)}
-              className="flex w-full items-center justify-between rounded-lg bg-white border border-[#E6DFD2] px-4 py-3 text-left shadow-xs"
+              className="flex w-full items-center justify-between rounded-lg bg-white border border-[#E3DAF0] px-4 py-3 text-left shadow-xs hover:bg-[#F7F4FA]/50 transition"
             >
               <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#991B1B]" />
-                <span className="text-sm font-semibold text-stone-800">
+                <FileText className="h-4 w-4 text-[#552985]" />
+                <span className="text-sm font-semibold text-[#2D233D]">
                   Answer Key
                 </span>
-                <span className="text-xs text-stone-500">
+                <span className="text-xs text-[#5D5E60]">
                   ({entries.filter((e) => e.correctAnswer.trim()).length} of{" "}
                   {entries.length} filled)
                 </span>
               </div>
               {showKeyEditor ? (
-                <ChevronUp className="h-4 w-4 text-stone-400" />
+                <ChevronUp className="h-4 w-4 text-[#7F5FA8]" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-stone-400" />
+                <ChevronDown className="h-4 w-4 text-[#7F5FA8]" />
               )}
             </button>
 
             {showKeyEditor && (
-              <div className="rounded-xl border border-[#E6DFD2] bg-white shadow-xs overflow-hidden">
-                <div className="max-h-[60vh] overflow-y-auto divide-y divide-stone-100">
+              <div className="rounded-xl border border-[#E3DAF0] bg-white shadow-xs overflow-hidden">
+                <div className="max-h-[60vh] overflow-y-auto divide-y divide-[#EFE9F8]">
                   {entries.map((entry, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-stone-50/50"
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-[#F7F4FA]/60"
                     >
                       {/* Number */}
-                      <span className="w-7 text-center text-xs font-bold text-stone-400">
+                      <span className="w-7 text-center text-xs font-bold text-[#7F5FA8]">
                         {entry.questionNumber}
                       </span>
 
@@ -400,7 +414,7 @@ export function QuickGradeClient({
                             points: e.target.value === "mcq" ? 1 : 5,
                           })
                         }
-                        className="rounded border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-stone-700 focus:border-[#991B1B] focus:outline-none"
+                        className="rounded border border-[#E3DAF0] bg-[#F7F5FA] px-2 py-1 text-xs text-[#2D233D] focus:border-[#552985] focus:outline-none"
                       >
                         <option value="mcq">MCQ</option>
                         <option value="essay">Essay</option>
@@ -423,8 +437,8 @@ export function QuickGradeClient({
                               }
                               className={`h-7 w-7 rounded-md text-xs font-semibold transition ${
                                 entry.correctAnswer === letter
-                                  ? "bg-[#1F5E4B] text-white shadow-sm"
-                                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                                  ? "bg-[#552985] text-white shadow-sm"
+                                  : "bg-[#F7F4FA] text-[#5D5E60] hover:bg-[#EFE9F8] hover:text-[#552985]"
                               }`}
                             >
                               {letter}
@@ -439,7 +453,7 @@ export function QuickGradeClient({
                             updateEntry(idx, { correctAnswer: e.target.value })
                           }
                           placeholder="Model answer…"
-                          className="flex-1 min-w-0 rounded-lg border border-stone-200 px-2.5 py-1 text-xs text-stone-800 placeholder:text-stone-400 focus:border-[#991B1B] focus:outline-none"
+                          className="flex-1 min-w-0 rounded-lg border border-[#E3DAF0] px-2.5 py-1 text-xs text-[#2D233D] placeholder:text-[#8E8A96] focus:border-[#552985] focus:outline-none"
                         />
                       )}
 
@@ -454,16 +468,16 @@ export function QuickGradeClient({
                             points: Math.max(1, Number(e.target.value) || 1),
                           })
                         }
-                        className="w-12 rounded border border-stone-200 bg-stone-50 px-1.5 py-1 text-center text-xs text-stone-700 focus:border-[#991B1B] focus:outline-none"
+                        className="w-12 rounded border border-[#E3DAF0] bg-[#F7F5FA] px-1.5 py-1 text-center text-xs text-[#2D233D] focus:border-[#552985] focus:outline-none"
                         title="Points"
                       />
-                      <span className="text-[10px] text-stone-400">pts</span>
+                      <span className="text-[10px] text-[#5D5E60]">pts</span>
 
                       {/* Remove */}
                       <button
                         type="button"
                         onClick={() => removeQuestion(idx)}
-                        className="text-stone-300 hover:text-red-500 transition"
+                        className="text-[#AE97C5] hover:text-red-500 transition"
                         title="Remove question"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -476,7 +490,7 @@ export function QuickGradeClient({
                   <button
                     type="button"
                     onClick={addQuestion}
-                    className="flex w-full items-center justify-center gap-1.5 border-t border-stone-100 py-2 text-xs font-medium text-[#1F5E4B] hover:bg-emerald-50/50 transition"
+                    className="flex w-full items-center justify-center gap-1.5 border-t border-[#EFE9F8] py-2 text-xs font-medium text-[#552985] hover:bg-[#F7F4FA] transition"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Question
@@ -489,8 +503,8 @@ export function QuickGradeClient({
           {/* RIGHT: Upload + Grade */}
           <div className="space-y-4">
             {/* Student name */}
-            <div className="rounded-xl border border-[#E6DFD2] bg-white p-4 shadow-xs">
-              <label className="block text-xs font-medium text-stone-600 mb-1.5">
+            <div className="rounded-xl border border-[#E3DAF0] bg-white p-4 shadow-xs">
+              <label className="block text-xs font-medium text-[#5D5E60] mb-1.5">
                 Student Name (optional)
               </label>
               <input
@@ -498,7 +512,7 @@ export function QuickGradeClient({
                 value={studentName}
                 onChange={(e) => setStudentName(e.target.value)}
                 placeholder="e.g. Maya Lin"
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-[#991B1B] focus:outline-none"
+                className="w-full rounded-lg border border-[#E3DAF0] px-3 py-2 text-sm text-[#2D233D] placeholder:text-[#8E8A96] focus:border-[#552985] focus:outline-none"
               />
             </div>
 
@@ -506,8 +520,8 @@ export function QuickGradeClient({
             <div
               className={`rounded-xl border-2 border-dashed p-6 text-center transition ${
                 files.length > 0
-                  ? "border-emerald-300 bg-emerald-50/30"
-                  : "border-stone-300 bg-white hover:border-[#991B1B]/40 hover:bg-red-50/20"
+                  ? "border-[#7F5FA8] bg-[#F7F4FA]"
+                  : "border-[#C8B9DE] bg-white hover:border-[#552985]/60 hover:bg-[#F7F4FA]"
               }`}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -533,17 +547,17 @@ export function QuickGradeClient({
 
               {files.length === 0 ? (
                 <>
-                  <Upload className="mx-auto h-10 w-10 text-stone-300" />
-                  <p className="mt-2 text-sm font-medium text-stone-600">
+                  <Upload className="mx-auto h-10 w-10 text-[#997FBC]" />
+                  <p className="mt-2 text-sm font-medium text-[#2D233D]">
                     Upload homework image
                   </p>
-                  <p className="mt-1 text-xs text-stone-400">
+                  <p className="mt-1 text-xs text-[#5D5E60]">
                     Drag & drop or click — PNG, JPG, WEBP, HEIC, PDF
                   </p>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#991B1B] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#7F1D1D] transition"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#7F5FA8] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#633C8D] transition"
                   >
                     <Camera className="h-4 w-4" />
                     Choose File
@@ -555,7 +569,7 @@ export function QuickGradeClient({
                     {files.map((f, i) => (
                       <div
                         key={i}
-                        className="relative group rounded-lg border border-stone-200 bg-white overflow-hidden shadow-xs"
+                        className="relative group rounded-lg border border-[#E3DAF0] bg-white overflow-hidden shadow-xs"
                       >
                         {previews[i] ? (
                           <img
@@ -564,8 +578,8 @@ export function QuickGradeClient({
                             className="h-24 w-24 object-cover"
                           />
                         ) : (
-                          <div className="flex h-24 w-24 items-center justify-center bg-stone-100">
-                            <FileText className="h-8 w-8 text-stone-400" />
+                          <div className="flex h-24 w-24 items-center justify-center bg-[#F7F4FA]">
+                            <FileText className="h-8 w-8 text-[#7F5FA8]" />
                           </div>
                         )}
                         <button
@@ -575,7 +589,7 @@ export function QuickGradeClient({
                         >
                           <X className="h-3 w-3" />
                         </button>
-                        <p className="px-1 py-0.5 text-[10px] text-stone-500 truncate max-w-[6rem]">
+                        <p className="px-1 py-0.5 text-[10px] text-[#5D5E60] truncate max-w-[6rem]">
                           {f.name}
                         </p>
                       </div>
@@ -584,7 +598,7 @@ export function QuickGradeClient({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#991B1B] hover:text-[#7F1D1D] transition"
+                    className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#552985] hover:text-[#633C8D] transition"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add More
@@ -605,7 +619,7 @@ export function QuickGradeClient({
               type="button"
               onClick={handleGrade}
               disabled={loading || !configured}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1F5E4B] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#174839] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#552985] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#633C8D] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -626,34 +640,34 @@ export function QuickGradeClient({
                 {/* Transcription toggle */}
                 <button
                   onClick={() => setShowTranscription(!showTranscription)}
-                  className="flex w-full items-center justify-between rounded-lg border border-[#E6DFD2] bg-white px-4 py-2.5 text-left shadow-xs hover:bg-stone-50 transition"
+                  className="flex w-full items-center justify-between rounded-lg border border-[#E3DAF0] bg-white px-4 py-2.5 text-left shadow-xs hover:bg-[#F7F4FA] transition"
                 >
-                  <span className="text-xs font-medium text-stone-700">
+                  <span className="text-xs font-medium text-[#2D233D]">
                     📝 Transcribed Student Work
                   </span>
                   {showTranscription ? (
-                    <ChevronUp className="h-4 w-4 text-stone-400" />
+                    <ChevronUp className="h-4 w-4 text-[#7F5FA8]" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-stone-400" />
+                    <ChevronDown className="h-4 w-4 text-[#7F5FA8]" />
                   )}
                 </button>
 
                 {showTranscription && (
-                  <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
-                    <pre className="whitespace-pre-wrap text-xs text-stone-700 font-mono leading-relaxed">
+                  <div className="rounded-lg border border-[#E3DAF0] bg-white p-4">
+                    <pre className="whitespace-pre-wrap text-xs text-[#2D233D] font-mono leading-relaxed">
                       {result.transcribedText}
                     </pre>
                   </div>
                 )}
 
                 {/* Per-question results */}
-                <div className="rounded-xl border border-[#E6DFD2] bg-white shadow-xs overflow-hidden">
-                  <div className="px-4 py-3 border-b border-stone-100">
-                    <h3 className="text-sm font-semibold text-stone-800">
+                <div className="rounded-xl border border-[#E3DAF0] bg-white shadow-xs overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[#EFE9F8]">
+                    <h3 className="text-sm font-semibold text-[#2D233D]">
                       Question-by-Question Results
                     </h3>
                   </div>
-                  <div className="divide-y divide-stone-100">
+                  <div className="divide-y divide-[#EFE9F8]">
                     {result.results.map((r) => (
                       <div
                         key={r.questionNumber}
@@ -662,13 +676,13 @@ export function QuickGradeClient({
                         {statusIcon(r.status)}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-stone-700">
+                            <span className="text-xs font-bold text-[#2D233D]">
                               Q{r.questionNumber}
                             </span>
                             <span
                               className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
                                 r.status === "correct"
-                                  ? "bg-emerald-50 text-emerald-700"
+                                  ? "bg-[#F7F4FA] text-[#552985]"
                                   : r.status === "partial"
                                     ? "bg-amber-50 text-amber-700"
                                     : r.status === "missing"
@@ -684,14 +698,14 @@ export function QuickGradeClient({
                                     ? "Missing"
                                     : "Incorrect"}
                             </span>
-                            <span className="ml-auto text-xs text-stone-500">
+                            <span className="ml-auto text-xs text-[#5D5E60]">
                               {r.pointsEarned}/{r.maxPoints} pts
                             </span>
                           </div>
-                          <p className="mt-0.5 text-xs text-stone-500">
+                          <p className="mt-0.5 text-xs text-[#5D5E60]">
                             Student: &ldquo;{r.studentAnswer}&rdquo;
                           </p>
-                          <p className="mt-0.5 text-xs text-stone-600 leading-relaxed">
+                          <p className="mt-0.5 text-xs text-[#2D233D] leading-relaxed">
                             {r.explanation}
                           </p>
                         </div>

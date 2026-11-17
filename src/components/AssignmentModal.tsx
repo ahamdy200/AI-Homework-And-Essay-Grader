@@ -12,6 +12,7 @@ interface AssignmentModalProps {
   onClose: () => void;
   onCreated: (assignment: Assignment) => void;
   onUpdated: (assignment: Assignment) => void;
+  onDeleted?: (assignmentId: string) => Promise<void> | void;
 }
 
 export function AssignmentModal({
@@ -21,6 +22,7 @@ export function AssignmentModal({
   onClose,
   onCreated,
   onUpdated,
+  onDeleted,
 }: AssignmentModalProps) {
   const [title, setTitle] = useState("");
   const [gradeLevel, setGradeLevel] = useState("Grade 8");
@@ -37,11 +39,15 @@ export function AssignmentModal({
     []
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setError(null);
+    setConfirmDelete(false);
+    setIsDeleting(false);
     setModelAnswerFiles([]);
     setRemovedAttachmentIds([]);
 
@@ -182,16 +188,32 @@ export function AssignmentModal({
     }
   };
 
+  const handleDeleteAssignment = async () => {
+    if (!editingAssignment || !onDeleted) return;
+    setError(null);
+    setIsDeleting(true);
+    try {
+      await onDeleted(editingAssignment.id);
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete assignment."
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const totalPoints = criteria.reduce(
     (sum, c) => sum + (Number(c.maxScore) || 0),
     0
   );
 
   return (
-    <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4 backdrop-blur-xs">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[#E6DFD2] bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between border-b border-[#E6DFD2] pb-3">
-          <h2 className="font-serif-paper text-lg font-semibold text-stone-900">
+    <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-[#2D233D]/45 p-4 backdrop-blur-xs">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[#DFD5EC] bg-white p-6 shadow-xl">
+        <div className="flex items-center justify-between border-b border-[#E3DAF0] pb-3">
+          <h2 className="font-serif-paper text-lg font-semibold text-[#2D233D]">
             {isEditing
               ? "Edit Assignment, Rubric & Answer Key"
               : "Create Assignment, Rubric & Answer Key"}
@@ -199,7 +221,7 @@ export function AssignmentModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+            className="rounded-lg p-1 text-[#5D5E60] hover:bg-[#F7F4FA] hover:text-[#2D233D]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -214,7 +236,7 @@ export function AssignmentModal({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-semibold text-stone-700">
+              <label className="mb-1 block text-xs font-semibold text-[#2D233D]">
                 Assignment / Quiz Title *
               </label>
               <input
@@ -223,12 +245,12 @@ export function AssignmentModal({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., Unit 3 Grammar & Reading Quiz"
                 required
-                className="w-full rounded-xl border border-[#E6DFD2] px-3 py-2 text-sm outline-none focus:border-[#1F5E4B]"
+                className="w-full rounded-xl border border-[#DFD5EC] px-3 py-2 text-sm text-[#2D2A32] outline-none focus:border-[#552985]"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-stone-700">
+              <label className="mb-1 block text-xs font-semibold text-[#2D233D]">
                 Grade Level
               </label>
               <input
@@ -236,13 +258,13 @@ export function AssignmentModal({
                 value={gradeLevel}
                 onChange={(e) => setGradeLevel(e.target.value)}
                 placeholder="e.g., Grade 9"
-                className="w-full rounded-xl border border-[#E6DFD2] px-3 py-2 text-sm outline-none focus:border-[#1F5E4B]"
+                className="w-full rounded-xl border border-[#DFD5EC] px-3 py-2 text-sm text-[#2D2A32] outline-none focus:border-[#552985]"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-stone-700">
+            <label className="mb-1 block text-xs font-semibold text-[#2D233D]">
               Assignment Prompt / Quiz Questions
             </label>
             <textarea
@@ -250,7 +272,7 @@ export function AssignmentModal({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Paste the essay prompt or quiz questions students were given..."
-              className="w-full rounded-xl border border-[#E6DFD2] px-3 py-2 text-sm outline-none focus:border-[#1F5E4B]"
+              className="w-full rounded-xl border border-[#DFD5EC] px-3 py-2 text-sm text-[#2D2A32] outline-none focus:border-[#552985]"
             />
           </div>
 
@@ -265,17 +287,17 @@ export function AssignmentModal({
             onToggleRemoveExisting={handleToggleRemoveExisting}
           />
 
-          <div className="rounded-xl border border-[#E6DFD2] bg-[#FAF8F4] p-4">
+          <div className="rounded-xl border border-[#E3DAF0] bg-[#F7F4FA] p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <span className="text-xs font-semibold text-stone-800">
+                <span className="text-xs font-semibold text-[#2D233D]">
                   Rubric Criteria (Total: {totalPoints} pts)
                 </span>
               </div>
               <select
                 onChange={(e) => handleLoadPreset(e.target.value)}
                 defaultValue=""
-                className="rounded-lg border border-[#E6DFD2] bg-white px-2.5 py-1 text-xs font-medium text-stone-700"
+                className="rounded-lg border border-[#DFD5EC] bg-white px-2.5 py-1 text-xs font-medium text-[#2D2A32] outline-none focus:border-[#552985]"
               >
                 <option value="" disabled>
                   Load from preset...
@@ -292,7 +314,7 @@ export function AssignmentModal({
               {criteria.map((crit, idx) => (
                 <div
                   key={crit.id}
-                  className="grid grid-cols-12 items-start gap-2 rounded-lg border border-[#E6DFD2] bg-white p-2.5"
+                  className="grid grid-cols-12 items-start gap-2 rounded-lg border border-[#E3DAF0] bg-white p-2.5"
                 >
                   <div className="col-span-5">
                     <input
@@ -307,7 +329,7 @@ export function AssignmentModal({
                         );
                       }}
                       placeholder="Criterion name"
-                      className="w-full rounded border border-[#E6DFD2] px-2 py-1 text-xs font-medium outline-none focus:border-[#1F5E4B]"
+                      className="w-full rounded border border-[#DFD5EC] px-2 py-1 text-xs font-medium outline-none focus:border-[#552985]"
                     />
                   </div>
                   <div className="col-span-5">
@@ -323,7 +345,7 @@ export function AssignmentModal({
                         );
                       }}
                       placeholder="Description for AI grader"
-                      className="w-full rounded border border-[#E6DFD2] px-2 py-1 text-xs outline-none focus:border-[#1F5E4B]"
+                      className="w-full rounded border border-[#DFD5EC] px-2 py-1 text-xs outline-none focus:border-[#552985]"
                     />
                   </div>
                   <div className="col-span-2 flex items-center gap-1">
@@ -340,14 +362,14 @@ export function AssignmentModal({
                           )
                         );
                       }}
-                      className="font-mono-score w-full rounded border border-[#E6DFD2] px-1.5 py-1 text-right text-xs outline-none focus:border-[#1F5E4B]"
+                      className="font-mono-score w-full rounded border border-[#DFD5EC] px-1.5 py-1 text-right text-xs outline-none focus:border-[#552985]"
                       aria-label="Max points"
                     />
                     {criteria.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveCriterion(idx)}
-                        className="p-1 text-stone-400 hover:text-red-600"
+                        className="p-1 text-[#5D5E60] hover:text-red-600"
                         title="Remove criterion"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -361,29 +383,73 @@ export function AssignmentModal({
             <button
               type="button"
               onClick={handleAddCriterion}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#1F5E4B] hover:underline"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#552985] hover:underline"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Add Criterion</span>
             </button>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-[#E6DFD2] pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-[#E6DFD2] px-4 py-2 text-xs font-medium text-stone-600 hover:bg-stone-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#1F5E4B] px-4 py-2 text-xs font-semibold text-white hover:bg-[#174839] disabled:opacity-60"
-            >
-              {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              <span>{isEditing ? "Save Changes" : "Save Assignment"}</span>
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E3DAF0] pt-4">
+            <div>
+              {isEditing && editingAssignment && onDeleted && (
+                confirmDelete ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-red-700">
+                      Delete this assignment?
+                    </span>
+                    <button
+                      type="button"
+                      disabled={isDeleting || isSaving}
+                      onClick={handleDeleteAssignment}
+                      className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                    >
+                      {isDeleting && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      )}
+                      <span>Confirm Delete</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={() => setConfirmDelete(false)}
+                      className="rounded-lg border border-[#DFD5EC] px-2.5 py-1.5 text-xs font-medium text-[#5D5E60] hover:bg-[#F7F4FA]"
+                    >
+                      Keep
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isSaving || isDeleting}
+                    onClick={() => setConfirmDelete(true)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/70 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete Assignment</span>
+                  </button>
+                )
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={isSaving || isDeleting}
+                onClick={onClose}
+                className="rounded-xl border border-[#DFD5EC] px-4 py-2 text-xs font-medium text-[#5D5E60] hover:bg-[#F7F4FA]"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving || isDeleting}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#552985] px-4 py-2 text-xs font-semibold text-white hover:bg-[#633C8D] disabled:opacity-60"
+              >
+                {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                <span>{isEditing ? "Save Changes" : "Save Assignment"}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

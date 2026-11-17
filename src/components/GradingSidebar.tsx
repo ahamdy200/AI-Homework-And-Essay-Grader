@@ -167,27 +167,27 @@ export function GradingSidebar({
   };
 
   return (
-    <aside className="no-print workbench-scroll flex h-full flex-col overflow-y-auto border-l border-[#E6DFD2] bg-white">
+    <aside className="no-print workbench-scroll flex h-full flex-col overflow-y-auto border-l border-[#E3DAF0] bg-white">
       {/* Overall Grade & Status */}
-      <div className="border-b border-[#E6DFD2] bg-[#FAF8F4]/70 p-5">
+      <div className="border-b border-[#E3DAF0] bg-[#F7F4FA]/75 p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <span className="text-[11px] font-semibold tracking-wider text-stone-500 uppercase">
+            <span className="text-[11px] font-semibold tracking-wider text-[#5D5E60] uppercase">
               {effective.isOverridden ? "Teacher Final Grade" : "AI Suggested Grade"}
             </span>
             <div className="mt-1 flex items-baseline gap-2.5">
-              <span className="font-mono-score text-3xl font-bold text-stone-900">
+              <span className="font-mono-score text-3xl font-bold text-[#552985]">
                 {effective.letterGrade}
               </span>
-              <span className="font-mono-score text-lg font-semibold text-stone-700">
+              <span className="font-mono-score text-lg font-semibold text-[#2D233D]">
                 {effective.percentage}%
               </span>
-              <span className="font-mono-score text-xs text-stone-500">
+              <span className="font-mono-score text-xs text-[#5D5E60]">
                 ({effective.earned}/{effective.max} pts)
               </span>
             </div>
             {effective.isOverridden && (
-              <p className="mt-1 text-[11px] text-stone-500">
+              <p className="mt-1 text-[11px] text-[#5D5E60]">
                 Original AI score: {submission.aiPercentage}% ({submission.aiLetterGrade})
               </p>
             )}
@@ -196,14 +196,14 @@ export function GradingSidebar({
           <button
             type="button"
             onClick={() => setShowOverrideEditor((v) => !v)}
-            className="rounded-lg border border-[#E6DFD2] bg-white px-2.5 py-1 text-[11px] font-medium text-stone-700 hover:bg-stone-50"
+            className="rounded-lg border border-[#DFD5EC] bg-white px-2.5 py-1 text-[11px] font-medium text-[#552985] hover:bg-[#F7F4FA]"
           >
             {showOverrideEditor ? "Close" : "Override %"}
           </button>
         </div>
 
         {showOverrideEditor && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#E6DFD2] bg-white p-2.5">
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#DFD5EC] bg-white p-2.5">
             <input
               type="number"
               min={0}
@@ -212,12 +212,12 @@ export function GradingSidebar({
               value={overrideInput}
               onChange={(e) => setOverrideInput(e.target.value)}
               placeholder="0–100"
-              className="font-mono-score w-20 rounded-lg border border-[#E6DFD2] px-2.5 py-1 text-xs outline-none focus:border-[#1F5E4B]"
+              className="font-mono-score w-20 rounded-lg border border-[#DFD5EC] px-2.5 py-1 text-xs outline-none focus:border-[#552985]"
             />
             <button
               type="button"
               onClick={handleApplyOverride}
-              className="rounded-lg bg-[#1F5E4B] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#174839]"
+              className="rounded-lg bg-[#552985] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#633C8D]"
             >
               Apply %
             </button>
@@ -225,7 +225,7 @@ export function GradingSidebar({
               <button
                 type="button"
                 onClick={handleClearOverride}
-                className="inline-flex items-center gap-1 rounded-lg border border-[#E6DFD2] px-2 py-1 text-xs text-stone-600 hover:bg-stone-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-[#DFD5EC] px-2 py-1 text-xs text-[#5D5E60] hover:bg-[#F7F4FA]"
               >
                 <RotateCcw className="h-3 w-3" />
                 <span>Reset</span>
@@ -235,7 +235,7 @@ export function GradingSidebar({
         )}
 
         {/* Workflow Status */}
-        <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-xl border border-[#E6DFD2] bg-white p-1">
+        <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-xl border border-[#DFD5EC] bg-white p-1">
           {(
             [
               { id: "ai_graded", label: "AI Graded" },
@@ -250,9 +250,9 @@ export function GradingSidebar({
               className={`inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-semibold transition ${
                 submission.status === st.id
                   ? st.id === "finalized"
-                    ? "bg-[#1F5E4B] text-white"
-                    : "bg-stone-900 text-white"
-                  : "text-stone-600 hover:bg-stone-50"
+                    ? "bg-[#552985] text-white"
+                    : "bg-[#2D233D] text-white"
+                  : "text-[#5D5E60] hover:bg-[#F7F4FA]"
               }`}
             >
               {submission.status === st.id && st.id === "finalized" && (
@@ -268,10 +268,10 @@ export function GradingSidebar({
         {/* Rubric Breakdown */}
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-xs font-semibold tracking-wider text-stone-500 uppercase">
+            <h3 className="text-xs font-semibold tracking-wider text-[#552985] uppercase">
               Rubric Scorecard
             </h3>
-            <span className="text-[11px] text-stone-500">
+            <span className="text-[11px] text-[#5D5E60]">
               Adjust any criterion score
             </span>
           </div>
@@ -284,10 +284,10 @@ export function GradingSidebar({
               return (
                 <div
                   key={c.criterionId}
-                  className="rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/50 p-3"
+                  className="rounded-xl border border-[#E3DAF0] bg-[#FBF9FD] p-3"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-stone-900">
+                    <span className="text-xs font-semibold text-[#2D233D]">
                       {c.criterionName}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -303,10 +303,10 @@ export function GradingSidebar({
                             handleCriterionChange(c.criterionId, val);
                           }
                         }}
-                        className="font-mono-score w-14 rounded-md border border-[#E6DFD2] bg-white px-1.5 py-0.5 text-right text-xs font-semibold text-stone-900 outline-none focus:border-[#1F5E4B]"
+                        className="font-mono-score w-14 rounded-md border border-[#DFD5EC] bg-white px-1.5 py-0.5 text-right text-xs font-semibold text-[#2D233D] outline-none focus:border-[#552985]"
                         aria-label={`${c.criterionName} score`}
                       />
-                      <span className="font-mono-score text-xs text-stone-500">
+                      <span className="font-mono-score text-xs text-[#5D5E60]">
                         / {c.maxScore}
                       </span>
                       {c.teacherScore !== null && (
@@ -315,7 +315,7 @@ export function GradingSidebar({
                           onClick={() =>
                             handleCriterionChange(c.criterionId, null)
                           }
-                          className="text-stone-400 hover:text-stone-700"
+                          className="text-[#997FBC] hover:text-[#552985]"
                           title={`Reset to AI score (${c.score})`}
                         >
                           <RotateCcw className="h-3 w-3" />
@@ -324,14 +324,14 @@ export function GradingSidebar({
                     </div>
                   </div>
 
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#E3DAF0]">
                     <div
-                      className="h-full rounded-full bg-[#1F5E4B] transition-all"
+                      className="h-full rounded-full bg-[#552985] transition-all"
                       style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
                     />
                   </div>
 
-                  <p className="mt-2 text-[11px] leading-relaxed text-stone-600">
+                  <p className="mt-2 text-[11px] leading-relaxed text-[#5D5E60]">
                     {c.rationale}
                   </p>
                 </div>
@@ -342,24 +342,24 @@ export function GradingSidebar({
 
         {/* Strengths & Priority Next Steps */}
         <section className="grid grid-cols-1 gap-3">
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-3.5">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-900">
+          <div className="rounded-xl border border-[#DFD5EC] border-l-4 border-l-[#552985] bg-[#F7F4FA]/85 p-3.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#552985]">
               <ThumbsUp className="h-3.5 w-3.5" />
               <span>What Worked Well</span>
             </div>
-            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-stone-700">
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-[#2D2A32]">
               {submission.strengths.map((s, idx) => (
                 <li key={idx}>{s}</li>
               ))}
             </ul>
           </div>
 
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-3.5">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+          <div className="rounded-xl border border-[#E3DAF0] border-l-4 border-l-[#997FBC] bg-white p-3.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#633C8D]">
               <Target className="h-3.5 w-3.5" />
-              <span>Priority Next Steps</span>
+              <span>Where to Grow Next</span>
             </div>
-            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-stone-700">
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-[#2D2A32]">
               {submission.priorityNextSteps.map((step, idx) => (
                 <li key={idx}>{step}</li>
               ))}
@@ -370,11 +370,11 @@ export function GradingSidebar({
         {/* Teacher Final Comment */}
         <section>
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="text-xs font-semibold tracking-wider text-stone-500 uppercase">
+            <label className="text-xs font-semibold tracking-wider text-[#552985] uppercase">
               Teacher Final Comment
             </label>
             {commentDirty && (
-              <span className="text-[11px] font-medium text-amber-700">
+              <span className="text-[11px] font-medium text-[#7F5FA8]">
                 Unsaved edits
               </span>
             )}
@@ -386,14 +386,14 @@ export function GradingSidebar({
               setCommentDraft(e.target.value);
               setCommentDirty(true);
             }}
-            className="w-full rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/50 p-3 text-xs leading-relaxed text-stone-800 outline-none focus:border-[#1F5E4B] focus:bg-white"
+            className="w-full rounded-xl border border-[#DFD5EC] bg-[#FBF9FD] p-3 text-xs leading-relaxed text-[#2D2A32] outline-none focus:border-[#552985] focus:bg-white"
           />
           <div className="mt-2 flex justify-end">
             <button
               type="button"
               disabled={!commentDirty || isSavingComment}
               onClick={handleSaveComment}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1F5E4B] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#174839] disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#552985] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#633C8D] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {isSavingComment ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -404,14 +404,14 @@ export function GradingSidebar({
         </section>
 
         {/* Stateful Teacher Follow-Up Assistant */}
-        <section className="border-t border-[#E6DFD2] pt-5">
+        <section className="border-t border-[#E3DAF0] pt-5">
           <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-stone-700 uppercase">
-              <MessageSquareText className="h-3.5 w-3.5 text-[#1F5E4B]" />
+            <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[#2D233D] uppercase">
+              <MessageSquareText className="h-3.5 w-3.5 text-[#552985]" />
               <span>Teacher Co-Pilot</span>
             </div>
-            <span className="inline-flex items-center gap-1 text-[10px] text-stone-500">
-              <Sparkles className="h-3 w-3 text-[#1F5E4B]" />
+            <span className="inline-flex items-center gap-1 text-[10px] text-[#5D5E60]">
+              <Sparkles className="h-3 w-3 text-[#7F5FA8]" />
               Stateful Context
             </span>
           </div>
@@ -423,7 +423,7 @@ export function GradingSidebar({
                 type="button"
                 disabled={isAskingFollowUp}
                 onClick={() => sendFollowUp(q)}
-                className="rounded-lg border border-[#E6DFD2] bg-[#FAF8F4] px-2.5 py-1 text-left text-[11px] font-medium text-stone-700 transition hover:border-[#1F5E4B] hover:bg-emerald-50 disabled:opacity-50"
+                className="rounded-lg border border-[#DFD5EC] bg-[#F7F4FA] px-2.5 py-1 text-left text-[11px] font-medium text-[#2D2A32] transition hover:border-[#552985] hover:bg-[#EFE9F8] disabled:opacity-50"
               >
                 {q}
               </button>
@@ -431,14 +431,14 @@ export function GradingSidebar({
           </div>
 
           {submission.followUps.length > 0 && (
-            <div className="mb-3 max-h-64 space-y-2.5 overflow-y-auto rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/70 p-3">
+            <div className="mb-3 max-h-64 space-y-2.5 overflow-y-auto rounded-xl border border-[#DFD5EC] bg-[#FBF9FD] p-3">
               {submission.followUps.map((msg) => (
                 <div
                   key={msg.id}
                   className={`rounded-lg p-2.5 text-xs leading-relaxed ${
                     msg.role === "teacher"
-                      ? "ml-4 bg-stone-900 text-white"
-                      : "mr-2 border border-[#E6DFD2] bg-white text-stone-800 whitespace-pre-wrap"
+                      ? "ml-4 bg-[#552985] text-white"
+                      : "mr-2 border border-[#E3DAF0] bg-white text-[#2D2A32] whitespace-pre-wrap"
                   }`}
                 >
                   {msg.content}
@@ -463,13 +463,13 @@ export function GradingSidebar({
                 }
               }}
               placeholder="Ask Gemini to adapt feedback, make drills..."
-              className="flex-1 rounded-xl border border-[#E6DFD2] bg-[#FAF8F4]/50 px-3 py-2 text-xs text-stone-900 outline-none focus:border-[#1F5E4B] focus:bg-white"
+              className="flex-1 rounded-xl border border-[#DFD5EC] bg-[#FBF9FD] px-3 py-2 text-xs text-[#2D233D] outline-none focus:border-[#552985] focus:bg-white"
             />
             <button
               type="button"
               disabled={!followUpInput.trim() || isAskingFollowUp}
               onClick={() => sendFollowUp(followUpInput)}
-              className="inline-flex items-center justify-center rounded-xl bg-[#1F5E4B] px-3 text-white transition hover:bg-[#174839] disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-xl bg-[#552985] px-3 text-white transition hover:bg-[#633C8D] disabled:opacity-50"
               aria-label="Send follow-up question"
             >
               {isAskingFollowUp ? (
