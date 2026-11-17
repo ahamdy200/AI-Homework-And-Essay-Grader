@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   createGeminiClient,
+  createInteractionWithFallback,
   formatGeminiError,
   MissingApiKeyError,
 } from "@/lib/gemini";
-import { GEMINI_MODEL } from "@/lib/types";
 
 const QuickGradeRequestSchema = z.object({
   /** Answer key: array of { questionNumber, type, correctAnswer } */
@@ -212,24 +212,27 @@ export async function POST(req: NextRequest) {
     const apiKeyOverride = req.headers.get("x-gemini-api-key");
     const ai = createGeminiClient(apiKeyOverride);
 
-    const interaction = await ai.interactions.create({
-      model: GEMINI_MODEL,
-      system_instruction: systemInstruction,
-      generation_config: {
-        thinking_level: "medium",
-      },
-      input: [
-        {
-          type: "user_input",
-          content: userContent,
+    const { interaction, modelUsed } = await createInteractionWithFallback(
+      ai,
+      (model) => ({
+        model,
+        system_instruction: systemInstruction,
+        generation_config: {
+          thinking_level: "medium",
         },
-      ],
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: QUICK_GRADE_RESPONSE_SCHEMA,
-      },
-    });
+        input: [
+          {
+            type: "user_input",
+            content: userContent,
+          },
+        ],
+        response_format: {
+          type: "text",
+          mime_type: "application/json",
+          schema: QUICK_GRADE_RESPONSE_SCHEMA,
+        },
+      })
+    );
 
     const rawText = interaction.output_text;
     if (!rawText) {
@@ -249,7 +252,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ result, model: GEMINI_MODEL });
+    return NextResponse.json({ result, model: modelUsed });
   } catch (err) {
     if (err instanceof MissingApiKeyError) {
       const formatted = formatGeminiError(err);

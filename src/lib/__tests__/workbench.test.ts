@@ -9,7 +9,12 @@ import {
 } from "../scoring";
 import { exportSubmissionsToCsv, formatStudentFeedbackMarkdown } from "../export";
 import { parseUploadedFiles, UploadValidationError } from "../uploads";
-import { formatGeminiError, MissingApiKeyError } from "../gemini";
+import {
+  createInteractionWithFallback,
+  formatGeminiError,
+  isTransientCapacityError,
+  MissingApiKeyError,
+} from "../gemini";
 import {
   applyMcqResultsToCriteria,
   parseAnswerKeyText,
@@ -374,5 +379,74 @@ describe("mixed MCQ & essay answer key parsing and reconciliation", () => {
     assert.equal(synced[0].score, 20); // 2/3 * 30 = 20
     assert.match(synced[0].rationale, /2\/3 correct/);
     assert.equal(synced[1].score, 25);
+  });
+});
+
+describe("Gemini high-demand retry & fallback", () => {
+  it("recognizes 503 high demand as transient while keeping 401/402 non-transient", () => {
+    const busyErr = Object.assign(new Error("503"), {
+      statusCode: 503,
+      body: JSON.stringify({
+        error: {
+          code: 503,
+          message:
+            "gemini-3.8-flash is currently experiencing high demand, spikes in demand are usually temporary. Please try again later.",
+          status: "UNAVAILABLE",
+        },
+      }),
+    });
+    assert.equal(isTransientCapacityError(busyErr), true);
+
+    const authErr = Object.assign(new Error("401"), {
+      statusCode: 401,
+      body: JSON.stringify({ error: { code: 401, status: "UNAVAILABLE" } }),
+    });
+    assert.equal(isTransientCapacityError(authErr), false);
+    assert.equal(isTransientCapacityError(new MissingApiKeyError()), false);
+  });
+
+  it("retries primary model once and falls back when 503 persists", async () => {
+    const calledModels: string[] = [];
+    const fakeAi = {
+      interactions: {
+        create: async (params: { model: string }) => {
+          calledModels.push(params.model);
+          if (params.model === "gemini-3.8-flash") {
+            throw Object.assign(new Error("503"), {
+              statusCode: 503,
+              body: JSON.stringify({
+                error: {
+                  code: 503,
+                  message: "gemini-3.8-flash is currently experiencing high demand",
+                  status: "UNAVAILABLE",
+                },
+              }),
+            });
+          }
+          return {
+            id: "int-fallback-1",
+            status: "completed",
+            output_text: '{"ok":true}',
+          };
+        },
+      },
+    };
+
+    const { interaction, modelUsed } = await createInteractionWithFallback(
+      fakeAi as unknown as Parameters<typeof createInteractionWithFallback>[0],
+      (model) => ({ model, input: "test" }),
+      {
+        models: ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"],
+        retryDelayMs: 0,
+      }
+    );
+
+    assert.deepEqual(calledModels, [
+      "gemini-3.8-flash",
+      "gemini-3.8-flash",
+      "gemini-3.6-flash",
+    ]);
+    assert.equal(modelUsed, "gemini-3.6-flash");
+    assert.equal(interaction.output_text, '{"ok":true}');
   });
 });

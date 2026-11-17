@@ -157,6 +157,17 @@ export function formatGeminiError(
     };
   }
 
+  if (
+    rawStatus === 503 ||
+    upstream.status === "UNAVAILABLE" ||
+    /high demand|overloaded/i.test(detail)
+  ) {
+    return {
+      httpStatus: 503,
+      message: `${detail || "Gemini models are temporarily experiencing high demand."} Automatic fallback models were also busy—please wait a few seconds and click Grade again.`,
+    };
+  }
+
   const httpStatus =
     typeof rawStatus === "number" && rawStatus >= 400 && rawStatus <= 599
       ? rawStatus
@@ -166,6 +177,79 @@ export function formatGeminiError(
     httpStatus,
     message: detail || fallbackMessage,
   };
+}
+
+export const GEMINI_FALLBACK_MODELS: readonly string[] = [
+  GEMINI_MODEL,
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+];
+
+/**
+ * Identifies temporary capacity/availability spikes (e.g. 503 UNAVAILABLE "high demand")
+ * where retrying or falling back to a sibling current model is safe.
+ */
+export function isTransientCapacityError(err: unknown): boolean {
+  const formatted = formatGeminiError(err);
+  if (
+    formatted.httpStatus === 500 ||
+    formatted.httpStatus === 502 ||
+    formatted.httpStatus === 503 ||
+    formatted.httpStatus === 504
+  ) {
+    // Only treat 500s from upstream capacity/network issues as transient, not MissingApiKeyError (400)
+    if (err instanceof MissingApiKeyError) return false;
+    return true;
+  }
+  return /high demand|overloaded|temporarily unavailable|unavailable/i.test(
+    formatted.message
+  );
+}
+
+type InteractionsCreateParams = Parameters<
+  GoogleGenAI["interactions"]["create"]
+>[0] & {
+  stream?: false;
+};
+type InteractionResult = Extract<
+  Awaited<ReturnType<GoogleGenAI["interactions"]["create"]>>,
+  { output_text?: string | null }
+>;
+
+export async function createInteractionWithFallback(
+  ai: Pick<GoogleGenAI, "interactions">,
+  buildRequest: (model: string) => InteractionsCreateParams,
+  options: {
+    models?: readonly string[];
+    retryDelayMs?: number;
+  } = {}
+): Promise<{ interaction: InteractionResult; modelUsed: string }> {
+  const models = options.models ?? GEMINI_FALLBACK_MODELS;
+  const retryDelayMs = options.retryDelayMs ?? 700;
+  let lastError: unknown;
+
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
+    const maxAttempts = i === 0 ? 2 : 1; // retry primary once before failing over
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const interaction = (await ai.interactions.create(
+          buildRequest(model)
+        )) as InteractionResult;
+        return { interaction, modelUsed: model };
+      } catch (err) {
+        lastError = err;
+        if (!isTransientCapacityError(err)) {
+          throw err;
+        }
+        if (attempt < maxAttempts && retryDelayMs > 0) {
+          await new Promise((r) => setTimeout(r, retryDelayMs));
+        }
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 export function resolveApiKey(overrideKey?: string | null): string | null {
@@ -465,6 +549,7 @@ export interface GradeSubmissionResult {
   annotations: AnnotationItem[];
   aiPercentage: number;
   aiLetterGrade: string;
+  modelUsed: string;
   interactionId: string | null;
   usageTokens: number | null;
 }
@@ -568,24 +653,27 @@ export async function gradeSubmissionWithGemini(
     inputBlocks.push(...studentMediaBlocks);
   }
 
-  const interaction = await ai.interactions.create({
-    model: GEMINI_MODEL,
-    system_instruction: systemInstruction,
-    generation_config: {
-      thinking_level: params.thinkingLevel,
-    },
-    input: [
-      {
-        type: "user_input",
-        content: inputBlocks,
+  const { interaction, modelUsed } = await createInteractionWithFallback(
+    ai,
+    (model) => ({
+      model,
+      system_instruction: systemInstruction,
+      generation_config: {
+        thinking_level: params.thinkingLevel,
       },
-    ],
-    response_format: {
-      type: "text",
-      mime_type: "application/json",
-      schema: GRADING_RESPONSE_JSON_SCHEMA,
-    },
-  });
+      input: [
+        {
+          type: "user_input",
+          content: inputBlocks,
+        },
+      ],
+      response_format: {
+        type: "text",
+        mime_type: "application/json",
+        schema: GRADING_RESPONSE_JSON_SCHEMA,
+      },
+    })
+  );
 
   const rawText = interaction.output_text;
   if (!rawText) {
@@ -671,6 +759,7 @@ export async function gradeSubmissionWithGemini(
     annotations: normalizedAnnotations,
     aiPercentage: totals.percentage,
     aiLetterGrade: calculateLetterGrade(totals.percentage),
+    modelUsed,
     interactionId: interaction.id ?? null,
     usageTokens: interaction.usage?.total_tokens ?? null,
   };
@@ -730,14 +819,15 @@ export async function askFollowUpWithGemini(params: {
     `Teacher Question: ${teacherMessage}`
   );
 
-  const fallbackInteraction = await ai.interactions.create({
-    model: GEMINI_MODEL,
-    system_instruction: systemInstruction,
-    generation_config: {
-      thinking_level: "low",
-    },
-    input: contextParts.join("\n\n"),
-  });
+  const { interaction: fallbackInteraction } =
+    await createInteractionWithFallback(ai, (model) => ({
+      model,
+      system_instruction: systemInstruction,
+      generation_config: {
+        thinking_level: "low",
+      },
+      input: contextParts.join("\n\n"),
+    }));
 
   if (!fallbackInteraction.output_text) {
     throw new Error("Gemini returned an empty follow-up response.");
@@ -757,18 +847,21 @@ export async function testGeminiConnection(
   message: string;
 }> {
   const ai = createGeminiClient(apiKeyOverride);
-  const interaction = await ai.interactions.create({
-    model: GEMINI_MODEL,
-    input: "Respond with the exact words: Connection verified.",
-    generation_config: {
-      thinking_level: "low",
-    },
-    store: false,
-  });
+  const { interaction, modelUsed } = await createInteractionWithFallback(
+    ai,
+    (model) => ({
+      model,
+      input: "Respond with the exact words: Connection verified.",
+      generation_config: {
+        thinking_level: "low",
+      },
+      store: false,
+    })
+  );
   return {
     ok: true,
-    model: GEMINI_MODEL,
+    model: modelUsed,
     message:
-      interaction.output_text?.trim() || "Connected to Gemini 3.8 Flash.",
+      interaction.output_text?.trim() || `Connected to ${modelUsed}.`,
   };
 }

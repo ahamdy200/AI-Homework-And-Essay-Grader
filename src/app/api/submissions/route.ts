@@ -14,7 +14,6 @@ import {
   updateWorkbenchData,
 } from "@/lib/storage";
 import {
-  GEMINI_MODEL,
   type GradingTone,
   type RubricCriterion,
   type Submission,
@@ -208,7 +207,7 @@ export async function POST(req: NextRequest) {
       status: "ai_graded",
       tone,
       thinkingLevel,
-      modelUsed: GEMINI_MODEL,
+      modelUsed: graded.modelUsed,
       interactionId: graded.interactionId,
       lastInteractionId: graded.interactionId,
       usageTokens: graded.usageTokens,
