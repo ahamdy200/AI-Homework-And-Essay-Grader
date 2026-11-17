@@ -454,14 +454,16 @@ const GRADING_RESPONSE_JSON_SCHEMA = {
 };
 
 function buildToneInstruction(tone: GradingTone): string {
+  const humanVoice =
+    "Write in a warm, natural, genuinely human English teacher voice—encouraging, clear, and respectful of the student's effort—avoiding cold or robotic grading clichés.";
   switch (tone) {
     case "encouraging":
-      return "Use an encouraging, growth-minded coaching tone suitable for building confidence while still identifying core mechanical or factual errors clearly.";
+      return `${humanVoice} Emphasize growth and confidence while still pointing out core mechanical or factual mistakes kindly and clearly.`;
     case "strict":
-      return "Apply rigorous exam-prep standards: catch subtle grammar, comma splice, tense shift, weak claim, missing key points, and precision issues thoroughly.";
+      return `${humanVoice} Hold rigorous academic exam standards—catch subtle grammar, comma splice, tense shift, weak claim, missing key points, and precision issues—while keeping feedback respectful and constructive.`;
     case "balanced":
     default:
-      return "Use a supportive yet accurate classroom teacher standard: praise genuine strengths and prioritize meaningful accuracy, grammar, clarity, and structure improvements.";
+      return `${humanVoice} Celebrate genuine strengths first and offer practical, supportive coaching on accuracy, grammar, clarity, and structure.`;
   }
 }
 

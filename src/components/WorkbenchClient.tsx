@@ -55,6 +55,7 @@ export function WorkbenchClient({
   const [editingAssignment, setEditingAssignment] =
     useState<Assignment | null>(null);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
+  const [reportPreviewOpen, setReportPreviewOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -238,6 +239,7 @@ export function WorkbenchClient({
           onNewSubmission={() => setIsComposingNew(true)}
           onOpenSettings={() => setSettingsOpen(true)}
           onCopyFeedback={handleCopyFeedback}
+          onPreviewReport={() => setReportPreviewOpen(true)}
           onPrintReport={handlePrintReport}
           onExportCsv={handleExportCsv}
         />
@@ -336,6 +338,49 @@ export function WorkbenchClient({
         submission={!isComposingNew ? activeSubmission : null}
         assignment={activeAssignment}
       />
+
+      {/* Interactive Report Preview Modal */}
+      {reportPreviewOpen && !isComposingNew && activeSubmission && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Student Feedback Report Preview"
+          className="no-print fixed inset-0 z-50 flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-xs"
+        >
+          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#DFD5EC] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#E3DAF0] bg-[#F7F4FA] px-5 py-3">
+              <div className="text-xs font-semibold text-[#552985]">
+                RCIS Student Feedback Report — {activeSubmission.studentName}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrintReport}
+                  className="rounded-lg bg-[#552985] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#633C8D]"
+                >
+                  Print / Save PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReportPreviewOpen(false)}
+                  className="rounded-lg border border-[#D7CBE8] bg-white px-3 py-1.5 text-xs font-medium text-[#5D5E60] hover:bg-stone-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto bg-[#F4F1F8] p-4 sm:p-6">
+              <div className="mx-auto max-w-3xl overflow-hidden rounded-xl border border-[#E3DAF0] bg-white shadow-sm">
+                <PrintReport
+                  embedded
+                  submission={activeSubmission}
+                  assignment={activeAssignment}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <SettingsModal

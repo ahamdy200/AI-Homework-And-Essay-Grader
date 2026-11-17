@@ -178,6 +178,8 @@ describe("export helpers", () => {
     const md = formatStudentFeedbackMarkdown(submission, assignment);
     assert.ok(md.includes("Maya Lin"));
     assert.ok(md.includes("Great work, Maya!"));
+    assert.ok(md.includes("Mr. Ahmed Hamdy"));
+    assert.ok(md.includes("Royal College International School"));
 
     const csv = exportSubmissionsToCsv([submission], [assignment]);
     assert.ok(csv.includes('"Smartphones, Essay"'));

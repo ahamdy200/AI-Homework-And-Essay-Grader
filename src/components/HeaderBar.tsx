@@ -6,6 +6,7 @@ import {
   Download,
   Feather,
   FileSpreadsheet,
+  FileText,
   KeyRound,
   Plus,
   Printer,
@@ -25,6 +26,7 @@ interface HeaderBarProps {
   onNewSubmission: () => void;
   onOpenSettings: () => void;
   onCopyFeedback: () => void;
+  onPreviewReport: () => void;
   onPrintReport: () => void;
   onExportCsv: () => void;
 }
@@ -38,6 +40,7 @@ export function HeaderBar({
   onNewSubmission,
   onOpenSettings,
   onCopyFeedback,
+  onPreviewReport,
   onPrintReport,
   onExportCsv,
 }: HeaderBarProps) {
@@ -84,6 +87,16 @@ export function HeaderBar({
                     <span className="hidden md:inline">Copy Feedback</span>
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={onPreviewReport}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#D7CBE8] bg-[#F7F4FA] px-3 py-1.5 text-xs font-semibold text-[#552985] shadow-xs transition hover:border-[#AE97C5] hover:bg-[#EFE9F8]"
+                title="Preview RCIS Student Report on screen"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span className="hidden md:inline">View Report</span>
               </button>
 
               <button

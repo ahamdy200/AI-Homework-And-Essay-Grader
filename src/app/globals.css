@@ -52,13 +52,16 @@ body {
 
 @media print {
   @page {
-    margin: 14mm;
+    margin: 12mm;
     size: auto;
   }
 
+  html,
   body {
     background: #ffffff !important;
-    color: #111827 !important;
+    color: #1c1917 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .no-print {

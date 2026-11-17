@@ -7,24 +7,35 @@ export function formatStudentFeedbackMarkdown(
   assignment?: Assignment
 ): string {
   const effective = getEffectiveSubmissionGrade(submission);
+  const firstName = submission.studentName.trim().split(/\s+/)[0] || "there";
   const lines: string[] = [];
 
-  lines.push(`# Writing Feedback: ${submission.detectedTitle || assignment?.title || "Student Submission"}`);
-  lines.push(`**Student:** ${submission.studentName}${submission.studentIdCode ? ` (${submission.studentIdCode})` : ""}`);
+  lines.push(
+    `# RCIS Feedback Report: ${submission.detectedTitle || assignment?.title || "English Assignment"}`
+  );
+  lines.push(
+    `**School:** The Royal College International School (RCIS)`
+  );
+  lines.push(`**Reviewed by:** Mr. Ahmed Hamdy`);
+  lines.push(
+    `**Student:** ${submission.studentName}${submission.studentIdCode ? ` (${submission.studentIdCode})` : ""}`
+  );
   if (assignment) {
     lines.push(`**Assignment:** ${assignment.title} (${assignment.gradeLevel})`);
   }
   lines.push(
-    `**Final Score:** ${effective.earned} / ${effective.max} (${effective.percentage}% — ${effective.letterGrade})`
+    `**Overall Result:** ${effective.earned} / ${effective.max} (${effective.percentage}% — ${effective.letterGrade})`
   );
   lines.push("");
 
-  lines.push("## Teacher Summary");
+  lines.push("## A Personal Note from Mr. Ahmed Hamdy");
+  lines.push(`Dear ${firstName},`);
+  lines.push("");
   lines.push(submission.teacherFinalComment || submission.summaryFeedback);
   lines.push("");
 
   if (submission.strengths.length > 0) {
-    lines.push("## Strengths");
+    lines.push("## What You Did Well");
     for (const s of submission.strengths) {
       lines.push(`- ${s}`);
     }
@@ -32,7 +43,7 @@ export function formatStudentFeedbackMarkdown(
   }
 
   if (submission.priorityNextSteps.length > 0) {
-    lines.push("## Next Steps for Revision");
+    lines.push("## Where to Grow Next");
     for (const step of submission.priorityNextSteps) {
       lines.push(`- ${step}`);
     }
@@ -73,14 +84,20 @@ export function formatStudentFeedbackMarkdown(
     (a) => a.status !== "dismissed" && a.category !== "praise"
   );
   if (activeAnnotations.length > 0) {
-    lines.push("## Key Writing Corrections");
+    lines.push("## Specific Writing Notes");
     activeAnnotations.forEach((a, idx) => {
       lines.push(
         `${idx + 1}. **[${a.category.toUpperCase()}]** "${a.quote}" → ${a.suggestedRevision ? `"${a.suggestedRevision}"` : "(see note)"}`
       );
       lines.push(`   ${a.teacherNote ? `${a.teacherNote} — ` : ""}${a.explanation}`);
     });
+    lines.push("");
   }
+
+  lines.push("---");
+  lines.push(
+    "Warm regards,\n**Mr. Ahmed Hamdy**\nThe Royal College International School (RCIS) • English Department"
+  );
 
   return lines.join("\n");
 }
