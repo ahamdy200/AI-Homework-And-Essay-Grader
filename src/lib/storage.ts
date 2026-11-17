@@ -46,7 +46,38 @@ function getStoragePaths() {
   };
 }
 
+let blobsDisabledForInstance = false;
+
+async function blobFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    const res = await globalThis.fetch(input, {
+      ...init,
+      signal: init?.signal ?? controller.signal,
+    });
+    // Avoid @netlify/blobs' built-in 5x5s retry sleeps inside 30s serverless lambdas
+    if (res.status === 403 || res.status === 429 || res.status >= 500) {
+      console.error(
+        `[storage] Netlify Blobs returned HTTP ${res.status}; failing fast to fallback storage.`
+      );
+      return new Response("Netlify Blobs unavailable", { status: 418 });
+    }
+    return res;
+  } catch (err) {
+    console.error("[storage] Netlify Blobs fetch failed; failing fast:", err);
+    return new Response("Netlify Blobs fetch failed", { status: 418 });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function getBlobStoreSafe(baseName: string): Store | null {
+  if (blobsDisabledForInstance) return null;
+
   const hasNetlifyRuntime = Boolean(
     process.env.NETLIFY ||
       process.env.NETLIFY_BLOBS_CONTEXT ||
@@ -59,12 +90,33 @@ function getBlobStoreSafe(baseName: string): Store | null {
     !ctx || ctx === "production" ? baseName : `${baseName}-preview`;
 
   try {
-    return getStore({ name: storeName, consistency: "strong" });
+    return getStore({ name: storeName, fetch: blobFetch });
   } catch (err) {
     if (err instanceof Error && err.name === "MissingBlobsEnvironmentError") {
       return null;
     }
     throw err;
+  }
+}
+
+async function withBlobStore<T>(
+  baseName: string,
+  blobFn: (store: Store) => Promise<T>,
+  fallbackFn: () => Promise<T>
+): Promise<T> {
+  const store = getBlobStoreSafe(baseName);
+  if (!store) {
+    return fallbackFn();
+  }
+  try {
+    return await blobFn(store);
+  } catch (err) {
+    console.error(
+      `[storage] Netlify Blobs failed for "${baseName}", falling back to ${resolveDataRootDir()}:`,
+      err
+    );
+    blobsDisabledForInstance = true;
+    return fallbackFn();
   }
 }
 
@@ -185,54 +237,58 @@ async function readWorkbenchDataDirect(): Promise<{
   data: WorkbenchData;
   needsSeedPersist: boolean;
 }> {
-  const blobStore = getBlobStoreSafe(WORKBENCH_BLOB_STORE);
-  if (blobStore) {
-    const existing = (await blobStore.get(WORKBENCH_BLOB_KEY, {
-      type: "json",
-      consistency: "strong",
-    })) as WorkbenchData | null;
-    if (existing) {
-      return { data: normalizeWorkbenchData(existing), needsSeedPersist: false };
-    }
-    return {
-      data: { assignments: createSeedAssignments(), submissions: [] },
-      needsSeedPersist: true,
-    };
-  }
-
-  await ensureDirectories();
-  const { workbenchFile } = getStoragePaths();
-  try {
-    const raw = await fs.readFile(
-      /*turbopackIgnore: true*/ workbenchFile,
-      "utf-8"
-    );
-    const parsed = JSON.parse(raw) as WorkbenchData;
-    return { data: normalizeWorkbenchData(parsed), needsSeedPersist: false };
-  } catch (err) {
-    const error = err as NodeJS.ErrnoException;
-    if (error.code === "ENOENT") {
+  return withBlobStore(
+    WORKBENCH_BLOB_STORE,
+    async (store) => {
+      const existing = (await store.get(WORKBENCH_BLOB_KEY, {
+        type: "json",
+      })) as WorkbenchData | null;
+      if (existing) {
+        return { data: normalizeWorkbenchData(existing), needsSeedPersist: false };
+      }
       return {
         data: { assignments: createSeedAssignments(), submissions: [] },
         needsSeedPersist: true,
       };
+    },
+    async () => {
+      await ensureDirectories();
+      const { workbenchFile } = getStoragePaths();
+      try {
+        const raw = await fs.readFile(
+          /*turbopackIgnore: true*/ workbenchFile,
+          "utf-8"
+        );
+        const parsed = JSON.parse(raw) as WorkbenchData;
+        return { data: normalizeWorkbenchData(parsed), needsSeedPersist: false };
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException;
+        if (error.code === "ENOENT") {
+          return {
+            data: { assignments: createSeedAssignments(), submissions: [] },
+            needsSeedPersist: true,
+          };
+        }
+        throw err;
+      }
     }
-    throw err;
-  }
+  );
 }
 
 async function writeWorkbenchDataDirect(data: WorkbenchData): Promise<void> {
-  const blobStore = getBlobStoreSafe(WORKBENCH_BLOB_STORE);
-  if (blobStore) {
-    await blobStore.setJSON(WORKBENCH_BLOB_KEY, data);
-    return;
-  }
-
-  await ensureDirectories();
-  const { workbenchFile } = getStoragePaths();
-  const tmpPath = `${workbenchFile}.${crypto.randomUUID()}.tmp`;
-  await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-  await fs.rename(tmpPath, workbenchFile);
+  return withBlobStore(
+    WORKBENCH_BLOB_STORE,
+    async (store) => {
+      await store.setJSON(WORKBENCH_BLOB_KEY, data);
+    },
+    async () => {
+      await ensureDirectories();
+      const { workbenchFile } = getStoragePaths();
+      const tmpPath = `${workbenchFile}.${crypto.randomUUID()}.tmp`;
+      await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+      await fs.rename(tmpPath, workbenchFile);
+    }
+  );
 }
 
 export async function readWorkbenchData(): Promise<WorkbenchData> {
@@ -279,46 +335,53 @@ export async function saveAttachmentsInFolder(
 ): Promise<UploadedAttachment[]> {
   if (files.length === 0) return [];
   const safeSubDir = folderId.replace(/[^a-zA-Z0-9_-]/g, "");
-  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
 
-  let targetDir = "";
-  if (!blobStore) {
-    await ensureDirectories();
-    targetDir = path.join(getStoragePaths().uploadsDir, safeSubDir);
-    await fs.mkdir(targetDir, { recursive: true });
-  }
-
-  const attachments: UploadedAttachment[] = [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  const prepared = files.map((file, i) => {
     const id = `${idPrefix}-${Date.now()}-${i}`;
     const ext = sanitizeExtension(file.originalName, file.mimeType);
     const filename = `${id}${ext}`;
-    if (blobStore) {
-      const blobKey = `${safeSubDir}/${filename}`;
-      const ab = file.buffer.buffer.slice(
-        file.buffer.byteOffset,
-        file.buffer.byteOffset + file.buffer.byteLength
-      ) as ArrayBuffer;
-      await blobStore.set(blobKey, ab, {
-        metadata: {
-          originalName: file.originalName,
-          mimeType: file.mimeType,
-        },
-      });
-    } else {
-      const diskPath = path.join(targetDir, filename);
-      await fs.writeFile(diskPath, file.buffer);
-    }
-    attachments.push({
+    return {
       id,
-      originalName: file.originalName,
-      mimeType: file.mimeType,
-      sizeBytes: file.buffer.byteLength,
-      urlPath: `/api/media/${safeSubDir}/${filename}`,
-    });
-  }
-  return attachments;
+      filename,
+      file,
+      meta: {
+        id,
+        originalName: file.originalName,
+        mimeType: file.mimeType,
+        sizeBytes: file.buffer.byteLength,
+        urlPath: `/api/media/${safeSubDir}/${filename}`,
+      } satisfies UploadedAttachment,
+    };
+  });
+
+  await withBlobStore(
+    UPLOADS_BLOB_STORE,
+    async (store) => {
+      for (const item of prepared) {
+        const blobKey = `${safeSubDir}/${item.filename}`;
+        const ab = item.file.buffer.buffer.slice(
+          item.file.buffer.byteOffset,
+          item.file.buffer.byteOffset + item.file.buffer.byteLength
+        ) as ArrayBuffer;
+        await store.set(blobKey, ab, {
+          metadata: {
+            originalName: item.file.originalName,
+            mimeType: item.file.mimeType,
+          },
+        });
+      }
+    },
+    async () => {
+      await ensureDirectories();
+      const targetDir = path.join(getStoragePaths().uploadsDir, safeSubDir);
+      await fs.mkdir(targetDir, { recursive: true });
+      for (const item of prepared) {
+        await fs.writeFile(path.join(targetDir, item.filename), item.file.buffer);
+      }
+    }
+  );
+
+  return prepared.map((p) => p.meta);
 }
 
 export async function saveSubmissionAttachments(
@@ -355,24 +418,26 @@ export async function readUploadFileBuffer(
   const safeKey = resolveSafeUploadKey(segments);
   if (!safeKey) return null;
 
-  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
-  if (blobStore) {
-    const ab = (await blobStore.get(
-      `${safeKey.subDir}/${safeKey.fileName}`,
-      { type: "arrayBuffer", consistency: "strong" }
-    )) as ArrayBuffer | null;
-    return ab ? Buffer.from(ab) : null;
-  }
-
-  const resolved = resolveSafeUploadPath(segments);
-  if (!resolved) return null;
-  try {
-    return await fs.readFile(/*turbopackIgnore: true*/ resolved);
-  } catch (err) {
-    const error = err as NodeJS.ErrnoException;
-    if (error.code === "ENOENT") return null;
-    throw err;
-  }
+  return withBlobStore(
+    UPLOADS_BLOB_STORE,
+    async (store) => {
+      const ab = (await store.get(`${safeKey.subDir}/${safeKey.fileName}`, {
+        type: "arrayBuffer",
+      })) as ArrayBuffer | null;
+      return ab ? Buffer.from(ab) : null;
+    },
+    async () => {
+      const resolved = resolveSafeUploadPath(segments);
+      if (!resolved) return null;
+      try {
+        return await fs.readFile(/*turbopackIgnore: true*/ resolved);
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException;
+        if (error.code === "ENOENT") return null;
+        throw err;
+      }
+    }
+  );
 }
 
 export async function readStoredAttachments(
@@ -405,30 +470,34 @@ export async function deleteSingleAttachmentFile(
   const safeKey = resolveSafeUploadKey(segments);
   if (!safeKey) return;
 
-  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
-  if (blobStore) {
-    await blobStore.delete(`${safeKey.subDir}/${safeKey.fileName}`);
-    return;
-  }
-
-  const resolved = resolveSafeUploadPath(segments);
-  if (!resolved) return;
-  await fs.rm(resolved, { force: true });
+  await withBlobStore(
+    UPLOADS_BLOB_STORE,
+    async (store) => {
+      await store.delete(`${safeKey.subDir}/${safeKey.fileName}`);
+    },
+    async () => {
+      const resolved = resolveSafeUploadPath(segments);
+      if (!resolved) return;
+      await fs.rm(resolved, { force: true });
+    }
+  );
 }
 
 export async function deleteAttachmentFolder(folderId: string): Promise<void> {
   const safeSubDir = folderId.replace(/[^a-zA-Z0-9_-]/g, "");
   if (!safeSubDir) return;
 
-  const blobStore = getBlobStoreSafe(UPLOADS_BLOB_STORE);
-  if (blobStore) {
-    const { blobs } = await blobStore.list({ prefix: `${safeSubDir}/` });
-    await Promise.all(blobs.map((b) => blobStore.delete(b.key)));
-    return;
-  }
-
-  const targetDir = path.join(getStoragePaths().uploadsDir, safeSubDir);
-  await fs.rm(targetDir, { recursive: true, force: true });
+  await withBlobStore(
+    UPLOADS_BLOB_STORE,
+    async (store) => {
+      const { blobs } = await store.list({ prefix: `${safeSubDir}/` });
+      await Promise.all(blobs.map((b) => store.delete(b.key)));
+    },
+    async () => {
+      const targetDir = path.join(getStoragePaths().uploadsDir, safeSubDir);
+      await fs.rm(targetDir, { recursive: true, force: true });
+    }
+  );
 }
 
 export async function deleteSubmissionFiles(submissionId: string): Promise<void> {
