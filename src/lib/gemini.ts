@@ -117,6 +117,18 @@ export function formatGeminiError(
       : "";
   const detail = upstream.message || errMessage;
 
+  if (
+    (err instanceof Error &&
+      (err.name === "TimeoutError" || err.name === "RequestTimeoutError")) ||
+    /timed?\s*out|aborted due to timeout/i.test(detail)
+  ) {
+    return {
+      httpStatus: 504,
+      message:
+        "Gemini took too long to respond and timed out across available models. If you uploaded large PDFs or multiple photos, try Quick (Low) or Standard reasoning depth or fewer files per submission, then click Grade again.",
+    };
+  }
+
   if (rawStatus === 402 || /prepayment credits/i.test(detail)) {
     return {
       httpStatus: 402,
@@ -182,15 +194,29 @@ export function formatGeminiError(
 export const GEMINI_FALLBACK_MODELS: readonly string[] = [
   GEMINI_MODEL,
   "gemini-3.6-flash",
+  "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite",
 ];
+
+function isTimeoutError(err: unknown): boolean {
+  if (
+    err instanceof Error &&
+    (err.name === "TimeoutError" ||
+      err.name === "RequestTimeoutError" ||
+      /timed?\s*out|aborted due to timeout/i.test(err.message))
+  ) {
+    return true;
+  }
+  return false;
+}
 
 /**
  * Identifies temporary capacity/availability spikes (e.g. 503 UNAVAILABLE "high demand")
  * where retrying or falling back to a sibling current model is safe.
  */
 export function isTransientCapacityError(err: unknown): boolean {
+  if (err instanceof MissingApiKeyError) return false;
   const formatted = formatGeminiError(err);
   if (
     formatted.httpStatus === 500 ||
@@ -198,13 +224,35 @@ export function isTransientCapacityError(err: unknown): boolean {
     formatted.httpStatus === 503 ||
     formatted.httpStatus === 504
   ) {
-    // Only treat 500s from upstream capacity/network issues as transient, not MissingApiKeyError (400)
-    if (err instanceof MissingApiKeyError) return false;
     return true;
   }
   return /high demand|overloaded|temporarily unavailable|unavailable/i.test(
     formatted.message
   );
+}
+
+function getFailoverDecision(err: unknown): {
+  failover: boolean;
+  retrySameModel: boolean;
+  timedOut: boolean;
+} {
+  if (err instanceof MissingApiKeyError) {
+    return { failover: false, retrySameModel: false, timedOut: false };
+  }
+  const timedOut = isTimeoutError(err);
+  if (timedOut) {
+    // Don't burn another 45s on the exact same stalled model; fail over to a faster sibling immediately.
+    return { failover: true, retrySameModel: false, timedOut: true };
+  }
+  const formatted = formatGeminiError(err);
+  if (formatted.httpStatus === 429) {
+    // Per-model Free Tier quota (e.g., 20 RPD on gemini-3.8-flash): skip immediately to sibling model.
+    return { failover: true, retrySameModel: false, timedOut: false };
+  }
+  if (isTransientCapacityError(err)) {
+    return { failover: true, retrySameModel: true, timedOut: false };
+  }
+  return { failover: false, retrySameModel: false, timedOut: false };
 }
 
 type InteractionsCreateParams = Parameters<
@@ -219,32 +267,58 @@ type InteractionResult = Extract<
 
 export async function createInteractionWithFallback(
   ai: Pick<GoogleGenAI, "interactions">,
-  buildRequest: (model: string) => InteractionsCreateParams,
+  buildRequest: (
+    model: string,
+    context?: { downgradedAfterTimeout: boolean }
+  ) => InteractionsCreateParams,
   options: {
     models?: readonly string[];
     retryDelayMs?: number;
     timeoutMs?: number;
+    totalBudgetMs?: number;
   } = {}
 ): Promise<{ interaction: InteractionResult; modelUsed: string }> {
   const models = options.models ?? GEMINI_FALLBACK_MODELS;
   const retryDelayMs = options.retryDelayMs ?? 300;
-  const timeoutMs = options.timeoutMs ?? 45000;
+  const timeoutMs = options.timeoutMs ?? 40000;
+  const totalBudgetMs = options.totalBudgetMs ?? 90000;
+  const deadline = Date.now() + totalBudgetMs;
+  let sawTimeout = false;
   let lastError: unknown;
 
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
-    const maxAttempts = i === 0 ? 2 : 1; // retry primary once before failing over
+    const maxAttempts = i === 0 ? 2 : 1; // retry primary once on 503 before failing over
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const remainingBudget = deadline - Date.now();
+      if (remainingBudget < 6000 && lastError) {
+        throw lastError;
+      }
+      const attemptTimeoutMs = Math.min(
+        timeoutMs,
+        Math.max(8000, remainingBudget)
+      );
+
       try {
-        const interaction = (await ai.interactions.create(buildRequest(model), {
-          retries: { strategy: "none" },
-          timeout_ms: timeoutMs,
-        })) as InteractionResult;
+        const interaction = (await ai.interactions.create(
+          buildRequest(model, { downgradedAfterTimeout: sawTimeout }),
+          {
+            retries: { strategy: "none" },
+            timeout_ms: attemptTimeoutMs,
+          }
+        )) as InteractionResult;
         return { interaction, modelUsed: model };
       } catch (err) {
         lastError = err;
-        if (!isTransientCapacityError(err)) {
+        const decision = getFailoverDecision(err);
+        if (decision.timedOut) {
+          sawTimeout = true;
+        }
+        if (!decision.failover) {
           throw err;
+        }
+        if (!decision.retrySameModel) {
+          break; // Move directly to the next sibling model
         }
         if (attempt < maxAttempts && retryDelayMs > 0) {
           await new Promise((r) => setTimeout(r, retryDelayMs));
@@ -661,11 +735,13 @@ export async function gradeSubmissionWithGemini(
 
   const { interaction, modelUsed } = await createInteractionWithFallback(
     ai,
-    (model) => ({
+    (model, ctx) => ({
       model,
       system_instruction: systemInstruction,
       generation_config: {
-        thinking_level: params.thinkingLevel,
+        thinking_level: ctx?.downgradedAfterTimeout
+          ? "low"
+          : params.thinkingLevel,
       },
       input: [
         {
@@ -678,7 +754,8 @@ export async function gradeSubmissionWithGemini(
         mime_type: "application/json",
         schema: GRADING_RESPONSE_JSON_SCHEMA,
       },
-    })
+    }),
+    { timeoutMs: 45000, totalBudgetMs: 95000 }
   );
 
   const rawText = interaction.output_text;
@@ -788,15 +865,21 @@ export async function askFollowUpWithGemini(params: {
 
   if (prevId) {
     try {
-      const interaction = await ai.interactions.create({
-        model: GEMINI_MODEL,
-        previous_interaction_id: prevId,
-        system_instruction: systemInstruction,
-        generation_config: {
-          thinking_level: "low",
+      const interaction = await ai.interactions.create(
+        {
+          model: GEMINI_MODEL,
+          previous_interaction_id: prevId,
+          system_instruction: systemInstruction,
+          generation_config: {
+            thinking_level: "low",
+          },
+          input: teacherMessage,
         },
-        input: teacherMessage,
-      });
+        {
+          retries: { strategy: "none" },
+          timeout_ms: 25000,
+        }
+      );
 
       if (interaction.output_text) {
         return {
@@ -826,14 +909,18 @@ export async function askFollowUpWithGemini(params: {
   );
 
   const { interaction: fallbackInteraction } =
-    await createInteractionWithFallback(ai, (model) => ({
-      model,
-      system_instruction: systemInstruction,
-      generation_config: {
-        thinking_level: "low",
-      },
-      input: contextParts.join("\n\n"),
-    }));
+    await createInteractionWithFallback(
+      ai,
+      (model) => ({
+        model,
+        system_instruction: systemInstruction,
+        generation_config: {
+          thinking_level: "low",
+        },
+        input: contextParts.join("\n\n"),
+      }),
+      { timeoutMs: 30000, totalBudgetMs: 60000 }
+    );
 
   if (!fallbackInteraction.output_text) {
     throw new Error("Gemini returned an empty follow-up response.");
@@ -862,7 +949,8 @@ export async function testGeminiConnection(
         thinking_level: "low",
       },
       store: false,
-    })
+    }),
+    { timeoutMs: 12000, totalBudgetMs: 30000 }
   );
   return {
     ok: true,

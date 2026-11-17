@@ -451,4 +451,77 @@ describe("Gemini high-demand retry & fallback", () => {
     assert.equal(modelUsed, "gemini-3.6-flash");
     assert.equal(interaction.output_text, '{"ok":true}');
   });
+
+  it("fails over immediately without retrying same model on 429 quota limit or TimeoutError", async () => {
+    const calledOn429: string[] = [];
+    const ai429 = {
+      interactions: {
+        create: async (params: { model: string }) => {
+          calledOn429.push(params.model);
+          if (params.model === "gemini-3.8-flash") {
+            throw Object.assign(new Error("429"), {
+              statusCode: 429,
+              body: JSON.stringify({
+                error: {
+                  code: 429,
+                  message: "Rate limit exceeded for model gemini-3.8-flash",
+                  status: "RESOURCE_EXHAUSTED",
+                },
+              }),
+            });
+          }
+          return { id: "int-429-fb", status: "completed", output_text: "ok" };
+        },
+      },
+    };
+
+    const res429 = await createInteractionWithFallback(
+      ai429 as unknown as Parameters<typeof createInteractionWithFallback>[0],
+      (model) => ({ model, input: "test" }),
+      {
+        models: ["gemini-3.8-flash", "gemini-3.5-flash-lite"],
+        retryDelayMs: 0,
+      }
+    );
+    assert.deepEqual(calledOn429, ["gemini-3.8-flash", "gemini-3.5-flash-lite"]);
+    assert.equal(res429.modelUsed, "gemini-3.5-flash-lite");
+
+    const timeoutErr = Object.assign(
+      new Error("Request timed out: TimeoutError: The operation was aborted due to timeout"),
+      { name: "TimeoutError" }
+    );
+    assert.equal(formatGeminiError(timeoutErr).httpStatus, 504);
+
+    const calledOnTimeout: string[] = [];
+    const sawDowngrade: boolean[] = [];
+    const aiTimeout = {
+      interactions: {
+        create: async (params: { model: string }) => {
+          calledOnTimeout.push(params.model);
+          if (params.model === "gemini-3.8-flash") {
+            throw timeoutErr;
+          }
+          return { id: "int-to-fb", status: "completed", output_text: "ok" };
+        },
+      },
+    };
+
+    const resTimeout = await createInteractionWithFallback(
+      aiTimeout as unknown as Parameters<typeof createInteractionWithFallback>[0],
+      (model, ctx) => {
+        sawDowngrade.push(Boolean(ctx?.downgradedAfterTimeout));
+        return { model, input: "test" };
+      },
+      {
+        models: ["gemini-3.8-flash", "gemini-3.5-flash-lite"],
+        retryDelayMs: 0,
+      }
+    );
+    assert.deepEqual(calledOnTimeout, [
+      "gemini-3.8-flash",
+      "gemini-3.5-flash-lite",
+    ]);
+    assert.deepEqual(sawDowngrade, [false, true]);
+    assert.equal(resTimeout.modelUsed, "gemini-3.5-flash-lite");
+  });
 });

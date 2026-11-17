@@ -214,11 +214,11 @@ export async function POST(req: NextRequest) {
 
     const { interaction, modelUsed } = await createInteractionWithFallback(
       ai,
-      (model) => ({
+      (model, ctx) => ({
         model,
         system_instruction: systemInstruction,
         generation_config: {
-          thinking_level: "medium",
+          thinking_level: ctx?.downgradedAfterTimeout ? "low" : "medium",
         },
         input: [
           {
@@ -231,7 +231,8 @@ export async function POST(req: NextRequest) {
           mime_type: "application/json",
           schema: QUICK_GRADE_RESPONSE_SCHEMA,
         },
-      })
+      }),
+      { timeoutMs: 45000, totalBudgetMs: 95000 }
     );
 
     const rawText = interaction.output_text;
